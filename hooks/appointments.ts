@@ -19,8 +19,6 @@ export const seeAllAppointments = async () => {
     throw new Error("Token is required");
   }
 
-  console.log("token", token);
-
   const response = await axiosInstance.get("/api/appointments", {
     headers: {
       Authorization: `Bearer ${token}`,

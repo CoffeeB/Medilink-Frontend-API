@@ -3,7 +3,6 @@
 import React, { useState } from 'react';
 // import { useRouter } from 'nextjs-toploader/app';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -13,6 +12,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Upload, FileText, CreditCard, Shield } from 'lucide-react';
 import countries from "world-countries";
+import { Eye, EyeOff } from 'lucide-react';
 
 const phoneSchema = z
   .string()
@@ -46,16 +46,22 @@ const registerFormSchema = z.object({
   region: z.string().min(1, "Region is required"),
   postalCode: z.string().min(1, "Postal/Zip code is required"),
   country: z.string().min(1, "Country is required"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string().min(6, "Confirm password is required"),
   certificate: z.any().optional(),
   driversLicense: z.any().optional(),
   ssn: z.any().optional(),
   resume: z.any().optional(),
+}).refine((data) => data.password === data.confirmPassword, {
+  path: ["confirmPassword"], // error will show under confirmPassword
+  message: "Passwords do not match",
 });
 
 type FormValues = z.infer<typeof registerFormSchema>;
 
 export default function MarketerRegister() {
   // const [activeTab, setActiveTab] = useState<'marketer' | 'doctor'>('marketer');
+  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
   // const pathname = usePathname();
@@ -82,6 +88,8 @@ export default function MarketerRegister() {
       region: "",
       postalCode: "",
       country: "",
+      password: "",
+      confirmPassword: "",
     },
   });
 
@@ -336,6 +344,73 @@ export default function MarketerRegister() {
                         </FormItem>
                       )}
                     />
+                     <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-gray-700">
+                            <span className="font-medium">Password</span>
+                          </FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Input
+                                placeholder="Enter your password"
+                                type={showPassword ? "text" : "password"}
+                                autoComplete="current-password" // ✅ Better UX
+                                {...field}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700"
+                              >
+                                {showPassword ? (
+                                  <EyeOff className="h-4 w-4" />
+                                ) : (
+                                  <Eye className="h-4 w-4" />
+                                )}
+                              </button>
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="confirmPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-gray-700">
+                            <span className="font-medium">Confirm Password</span>
+                          </FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Input
+                                placeholder="Confirm your password"
+                                type={showPassword ? "text" : "password"}
+                                autoComplete="current-password" 
+                                {...field}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700"
+                              >
+                                {showPassword ? (
+                                  <EyeOff className="h-4 w-4" />
+                                ) : (
+                                  <Eye className="h-4 w-4" />
+                                )}
+                              </button>
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
                   </div>
 
                   {/* Address - Full Width */}
@@ -441,16 +516,6 @@ export default function MarketerRegister() {
                     >
                       {isSubmitting ? 'Submitting...' : 'Submit'}
                     </Button>
-                  </div>
-
-                  {/* Login Link */}
-                  <div className="text-center">
-                    <p className="text-sm text-gray-600">
-                      Already have an account?{' '}
-                      <Link href="/doctor/login" className="text-secondary hover:text-secondary/80 font-medium">
-                        Login here
-                      </Link>
-                    </p>
                   </div>
                 </form>
               </Form>

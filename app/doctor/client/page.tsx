@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/table"
 import { Input } from "@/components/ui/input"
 import { Search } from "lucide-react"
-import { DatePickerWithRange } from '@/components/DatePickerWithRange'
+// import { DatePickerWithRange } from '@/components/DatePickerWithRange'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
@@ -107,53 +107,53 @@ export default function ClientDiagnosis() {
   const canEdit = selected && (selected.status === 'Pending' || selected.status === 'Review')
 
   return (
-    <div className="container max-w-[1350px] mx-auto p-6 space-y-6">
+    <div className="container max-w-[1350px] mx-auto p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-          <CardTitle className="text-lg font-medium">Client</CardTitle>
+        <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 pb-4">
+          <CardTitle className="text-base sm:text-lg font-medium">Client</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col md:flex-row justify-between gap-4 mb-4">
-            <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex flex-col lg:flex-row justify-between gap-3 sm:gap-4 mb-4">
+            <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
               <div className="relative">
                 <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
                   placeholder="Search clients..."
-                  className="pl-8 w-[300px]"
+                  className="pl-8 w-full sm:w-[300px] text-sm sm:text-base"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              <DatePickerWithRange />
+              {/* <DatePickerWithRange className='md:w-7xl'/> */}
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-sm text-muted-foreground">
+              <span className="text-xs sm:text-sm text-muted-foreground">
                 Showing {filteredDiagnoses.length} of {diagnoses.length} clients
               </span>
             </div>
           </div>
 
-          <div className="rounded-md border">
+          <div className="rounded-md border overflow-x-auto">
             <Table>
               <TableHeader className="bg-gray-100">
                 <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Client Name</TableHead>
-                  <TableHead>Status</TableHead>
+                  <TableHead className="text-xs sm:text-sm">Date</TableHead>
+                  <TableHead className="text-xs sm:text-sm">Client Name</TableHead>
+                  <TableHead className="text-xs sm:text-sm">Status</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {filteredDiagnoses.length === 0 ? (
                   <TableRow>
-                    <TableCell colSpan={5} className="text-center py-6">
+                    <TableCell colSpan={5} className="text-center py-6 text-sm sm:text-base">
                       No Client found
                     </TableCell>
                   </TableRow>
                 ) : (
                   filteredDiagnoses.map((diagnosis) => (
                     <TableRow key={diagnosis.id} className="cursor-pointer hover:bg-accent" onClick={() => handleRowClick(diagnosis)}>
-                      <TableCell>{new Date(diagnosis.date).toLocaleDateString()}</TableCell>
-                      <TableCell>{diagnosis.name}</TableCell>
+                      <TableCell className="text-xs sm:text-sm">{new Date(diagnosis.date).toLocaleDateString()}</TableCell>
+                      <TableCell className="text-xs sm:text-sm">{diagnosis.name}</TableCell>
                       <TableCell>
                         <span className={`px-2 py-1 rounded-full text-xs font-semibold ${diagnosis.status === "Submitted" ? "bg-green-100 text-green-800" : diagnosis.status === "Pending" ? "bg-yellow-100 text-yellow-800" : "bg-blue-100 text-blue-800"}`}>
                           {diagnosis.status}
@@ -169,52 +169,52 @@ export default function ClientDiagnosis() {
       </Card>
 
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="w-[90vw] max-w-2xl max-h-[90vh] overflow-y-auto">
           {selected && (
             <>
               <DialogHeader>
-                <DialogTitle>Appointment Details</DialogTitle>
+                <DialogTitle className="text-base sm:text-lg">Appointment Details</DialogTitle>
               </DialogHeader>
 
               <div className="space-y-3">
-                <p><b>Client:</b> {selected.name}</p>
-                <p><b>Sex:</b> {selected.sex ?? '—'}</p>
-                <p><b>Date:</b> {selected.date}</p>
-                <p><b>Time:</b> {selected.time ?? '—'}</p>
-                <p><b>Address:</b> {selected.address ?? '—'}</p>
+                <p className="text-sm sm:text-base"><b>Client:</b> {selected.name}</p>
+                <p className="text-sm sm:text-base"><b>Sex:</b> {selected.sex ?? '—'}</p>
+                <p className="text-sm sm:text-base"><b>Date:</b> {selected.date}</p>
+                <p className="text-sm sm:text-base"><b>Time:</b> {selected.time ?? '—'}</p>
+                <p className="text-sm sm:text-base"><b>Address:</b> {selected.address ?? '—'}</p>
                 {selected.status === 'Submitted' && (
                   <>
-                    <p><b>Assessment Summary:</b> {selected.assessment ?? '—'}</p>
-                    <p><b>Status:</b> {selected.status}</p>
+                    <p className="text-sm sm:text-base"><b>Assessment Summary:</b> {selected.assessment ?? '—'}</p>
+                    <p className="text-sm sm:text-base"><b>Status:</b> {selected.status}</p>
                   </>
                 )}
                 {selected.signature ? (
                   <div>
-                    <b>Client Signature:</b>
+                    <b className="text-sm sm:text-base">Client Signature:</b>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={selected.signature} alt="Client Signature" className="mt-2 border rounded-md w-40" />
+                    <img src={selected.signature} alt="Client Signature" className="mt-2 border rounded-md w-32 sm:w-40" />
                   </div>
                 ) : (
-                  <p className="text-sm text-muted-foreground"><b>Client Signature:</b> None</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground"><b>Client Signature:</b> None</p>
                 )}
 
                 {canEdit && (
                   <>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-2">
-                      <div className="md:col-span-2">
-                        <Label className="mb-1 block">Assessment Summary</Label>
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 pt-2">
+                      <div className="lg:col-span-2">
+                        <Label className="mb-1 block text-xs sm:text-sm">Assessment Summary</Label>
                         <Textarea
                           value={assessment}
                           onChange={(e) => setAssessment(e.target.value)}
                           placeholder="Write your assessment..."
-                          className="min-h-28"
+                          className="min-h-24 sm:min-h-28 text-sm sm:text-base"
                         />
                       </div>
 
                       <div>
-                        <Label className="mb-1 block">Status</Label>
+                        <Label className="mb-1 block text-xs sm:text-sm">Status</Label>
                         <Select value={statusSel} onValueChange={(v) => setStatusSel(v as ClientStatus)}>
-                          <SelectTrigger>
+                          <SelectTrigger className="text-sm sm:text-base">
                             <SelectValue placeholder="Select status" />
                           </SelectTrigger>
                           <SelectContent className="bg-white shadow-md border rounded-md">
@@ -225,18 +225,18 @@ export default function ClientDiagnosis() {
                         </Select>
                       </div>
 
-                      <div className="md:col-span-2">
-                        <Label className="mb-1 block">Doctor Signature</Label>
+                      <div className="lg:col-span-2">
+                        <Label className="mb-1 block text-xs sm:text-sm">Doctor Signature</Label>
                         <div className="border rounded-md p-2 bg-white">
                           <SignatureCanvas
                             ref={sigRef}
                             penColor="black"
-                            canvasProps={{ width: 500, height: 160, className: 'border w-full h-[160px]' }}
+                            canvasProps={{ width: 500, height: 160, className: 'border w-full h-[120px] sm:h-[160px]' }}
                             backgroundColor="white"
                           />
                         </div>
                         <div className="flex justify-between mt-2">
-                          <Button type="button" variant="outline" size="sm" onClick={() => sigRef.current?.clear()}>
+                          <Button type="button" variant="outline" size="sm" onClick={() => sigRef.current?.clear()} className="text-xs sm:text-sm">
                             Clear
                           </Button>
                         </div>
@@ -244,7 +244,7 @@ export default function ClientDiagnosis() {
                     </div>
 
                     <div className="pt-2">
-                      <Button onClick={handleConfirm} className="w-full">Confirm</Button>
+                      <Button onClick={handleConfirm} className="w-full text-sm sm:text-base">Confirm</Button>
                     </div>
                   </>
                 )}

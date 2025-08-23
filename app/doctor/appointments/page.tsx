@@ -48,10 +48,10 @@ const mockEvents : Event[] = [
 
 const ClientAppointments = () => {
   return (
-    <div className="container max-w-[1350px] mx-auto p-6 space-y-6">
+    <div className="container max-w-[1350px] mx-auto p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
       <Card>
-        <CardContent className='flex'>
-          <div className="w-80 border-r bg-background">
+        <CardContent className='flex flex-col lg:flex-row'>
+          <div className="w-full lg:w-80 border-b lg:border-b-0 lg:border-r bg-background">
             <DoctorEventList events={mockEvents} />
           </div>
           <div className="flex-1">

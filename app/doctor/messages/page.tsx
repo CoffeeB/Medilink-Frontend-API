@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Search, Phone, Video, Smile, Paperclip, Send, Check, CheckCheck, PhoneMissed, ListFilter, Camera, Mic, MessageSquareDot, Pen, Users, Signature, FileText, ImagePlay } from "lucide-react";
+import axiosInstance from "@/lib/axios";
 
 // Placeholder data
 const contacts = [
@@ -133,33 +134,31 @@ export default function ChatDashboard() {
   const handleSend = async () => {
     const text = messageInput.trim();
     if (!text || sending) return;
-
+  
     setSending(true);
     try {
-      const res = await fetch("/api/messages", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include", // keep if you're using cookie auth
-        body: JSON.stringify({
-          recipientId: selectedContact.id, // adjust if your API expects something else
+      const res = await axiosInstance.post(
+        "/api/messages",
+        {
+          recipientId: selectedContact.id, // request payload
           text,
-        }),
-      });
-
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err?.error || `Failed with status ${res.status}`);
-      }
-
+        },
+        {
+          headers: { "Content-Type": "application/json" },
+          withCredentials: true, // important if you’re using cookies
+        }
+      );
+  
       // success: clear the input
       setMessageInput("");
-    } catch (e) {
-      console.error("Send failed:", e);
+    } catch (e: any) {
+      console.error("Send failed:", e.response?.data || e.message);
       // optional: show a toast or inline error
     } finally {
       setSending(false);
     }
   };
+  
 
   return (
     <div className="flex h-screen bg-white p-10">
@@ -344,7 +343,7 @@ export default function ChatDashboard() {
                     }}
                   />
 
-                  <button className="cursor-pointer absolute right-3 top-1/2 transform -translate-y-1/2 p-2 bg-blue-900 text-white rounded-full hover:bg-blue-600 transition-colors disabled:opacity-50" disabled={!messageInput.trim()} onClick={handleSend}>
+                  <button type="button" className="cursor-pointer absolute right-3 top-1/2 transform -translate-y-1/2 p-2 bg-blue-900 text-white rounded-full hover:bg-blue-600 transition-colors disabled:opacity-50" disabled={!messageInput.trim()} onClick={handleSend}>
                     <Send className="w-5 h-5" />
                   </button>
                 </>

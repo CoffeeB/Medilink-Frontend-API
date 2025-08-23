@@ -67,8 +67,10 @@ const ClientAppointments = () => {
 
   useEffect(() => {
     const appointments = async () => {
+      const doctor = false;
+      const marketer = true;
       try {
-        const response = await seeAllAppointments();
+        const response = await seeAllAppointments(doctor, marketer);
 
         console.log(response);
 

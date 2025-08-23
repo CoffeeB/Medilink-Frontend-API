@@ -1,10 +1,9 @@
-import { z } from "zod";
+import { email, z } from "zod";
 import Cookies from "js-cookie";
 import axiosInstance from "../lib/axios";
 
-// ✅ Zod validation schema for login form
 export const loginFormSchema = z.object({
-  username: z.string().min(1, "Username is required"),
+  email: z.string().min(1, "Email is required"),
   password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
@@ -26,14 +25,12 @@ export type LoginResponse = {
   token: string;
 };
 
-// ✅ Since axiosInstance already has `/api` baseURL, keep API_URL relative
-const API_URL = "/auth";
-
-// ✅ Login
 export const login = async (data: LoginFormValues): Promise<LoginResponse> => {
-  const response = await axiosInstance.post(`${API_URL}/login`, data);
-
-  const { user, token } = response.data;
+  const response = await axiosInstance.post("/api/auth/login", {
+    email: data.email,
+    password: data.password,
+  });
+  const { token } = response.data;
 
   Cookies.set("token", token, {
     secure: true,
@@ -41,57 +38,53 @@ export const login = async (data: LoginFormValues): Promise<LoginResponse> => {
     expires: 7,
   });
 
-  Cookies.set("user", JSON.stringify(user), {
+  const userResponse = await axiosInstance.get("/api/auth/me", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const user = userResponse.data;
+
+  Cookies.set("user", JSON.stringify({ id: user._id, email: user.email, role: user.role }), {
     secure: true,
     sameSite: "strict",
     expires: 7,
   });
 
-  return response.data;
+  return { user, token };
 };
 
-// ✅ Logout
 export const logout = () => {
   Cookies.remove("token");
   Cookies.remove("user");
 };
 
-// ✅ Get stored user
 export const getStoredUser = (): User | null => {
   const userStr = Cookies.get("user");
   return userStr ? JSON.parse(userStr) : null;
 };
 
-// ✅ Check authentication
 export const isAuthenticated = (): boolean => {
   return !!Cookies.get("token");
 };
 
-// ✅ Role check (doctor lowercase)
-export const isDoctor = (): boolean => {
+export const isAdmin = (): boolean => {
   const user = getStoredUser();
-  return user?.role?.toLowerCase() === "doctor";
+  return user?.role === "ADMIN";
 };
 
-// ✅ Forgot password
-export const sendForgotPassword = async (data: {
-  email: string;
-}): Promise<{ message: string }> => {
-  const response = await axiosInstance.post(
-    `${API_URL}/forgot-password`,
-    { email: data.email }
-  );
+export const sendForgotPassword = async (data: { email: string }): Promise<{ message: string }> => {
+  const response = await axiosInstance.post("/api/auth/forgot-password", {
+    email: data.email,
+  });
   return response.data;
 };
 
-// ✅ Reset password
-export const sendResetPassword = async (data: {
-  password: string;
-  token: string;
-}): Promise<{ message: string }> => {
-  const response = await axiosInstance.post(
-    `${API_URL}/reset-password`,
-    { password: data.password, token: data.token }
-  );
+export const sendResetPassword = async (data: { password: string; token: string }): Promise<{ message: string }> => {
+  const response = await axiosInstance.post("/api/auth/reset-password", {
+    password: data.password,
+    token: data.token,
+  });
   return response.data;
 };

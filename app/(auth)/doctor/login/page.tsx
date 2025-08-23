@@ -1,36 +1,24 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation"; // ✅ use Next.js built-in router instead
+import { useRouter } from "nextjs-toploader/app";
 import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { login, loginFormSchema, logout, isDoctor } from "@/hooks/auth";
+import { login, loginFormSchema, logout } from "@/hooks/auth";
 import Footer from "@/components/Footer";
 
 import { Button } from "@/components/ui/button";
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form";
+
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import {
-  Lock,
-  User,
-  Eye,
-  EyeOff,
-  Loader,
-  ArrowRight,
-} from "lucide-react";
+import { Lock, User, Eye, EyeOff, Loader, ArrowRight } from "lucide-react";
 
 const formSchema = loginFormSchema;
+
 type FormValues = z.infer<typeof formSchema>;
 
 export default function DoctorLogin() {
@@ -41,7 +29,7 @@ export default function DoctorLogin() {
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      username: "",
+      email: "",
       password: "",
     },
   });
@@ -50,39 +38,28 @@ export default function DoctorLogin() {
     setError("");
 
     try {
-      await login(data);
+      const { user } = await login(data);
 
-      if (isDoctor()) {
-        // ✅ Use replace so user can’t go back to login with back button
-        router.replace("/doctor/authorizations");
+      if (user.role === "doctor") {
+        router.push("/doctor/appointments");
       } else {
         setError("Unauthorized access. Please log in as a doctor.");
         logout();
       }
-    } catch (err: unknown) {
-      if (err instanceof Error) {
-        console.error("Login failed:", err.message);
-        setError(err.message);
-      } else {
-        console.error("Login failed:", err);
-        setError("Failed to login. Please try again.");
-      }
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (err: any) {
+      console.log(err);
+      setError(err.response?.data?.error || "Failed to login. Please try again.");
     }
   };
 
   return (
     <div className="min-h-screen flex flex-col">
       <div className="flex-1 flex flex-col items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-        <p className="text-gray-600 mb-4 text-center max-w-lg">
-          Welcome back, you can connect and assess patients through a convenient,
-          safe and secure environment.
-        </p>
-
+        <p className="text-gray-600 mb-4 text-center max-w-lg">Welcome back, you can connect and assess patients through a convenient, safe and secure environment.</p>
         <Card className="w-full max-w-md shadow-xl rounded-md border-none">
           <CardHeader>
-            <p className="font-bold text-lg inline-flex items-center">
-              Log into Doctor Portal
-            </p>
+            <p className="font-bold text-lg inline-flex items-center">Log into Doctor Portal</p>
           </CardHeader>
           <CardContent>
             {error && (
@@ -90,38 +67,24 @@ export default function DoctorLogin() {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-
             <Form {...form}>
-              {/* ✅ Prevents default refresh correctly */}
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                noValidate
-                className="space-y-6"
-              >
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                 <FormField
                   control={form.control}
-                  name="username"
+                  name="email"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel className="text-gray-800 font-semibold">
-                        Username
-                      </FormLabel>
+                      <FormLabel className="text-gray-800 font-semibold">Email</FormLabel>
                       <FormControl>
                         <div className="relative">
                           <User className="h-4 w-4 absolute left-3 top-2.5 text-gray-500" />
-                          <Input
-                            className="mt-0 pl-10"
-                            placeholder="Enter your username"
-                            autoComplete="username" // ✅ Better UX
-                            {...field}
-                          />
+                          <Input className="mt-0 pl-10" placeholder="Enter your email" {...field} />
                         </div>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
-
                 <FormField
                   control={form.control}
                   name="password"
@@ -133,23 +96,9 @@ export default function DoctorLogin() {
                       <FormControl>
                         <div className="relative">
                           <Lock className="h-4 w-4 absolute left-3 top-2.5 text-gray-500" />
-                          <Input
-                            placeholder="Enter your password"
-                            type={showPassword ? "text" : "password"}
-                            className="pl-10 pr-10"
-                            autoComplete="current-password" // ✅ Better UX
-                            {...field}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setShowPassword(!showPassword)}
-                            className="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700"
-                          >
-                            {showPassword ? (
-                              <EyeOff className="h-4 w-4" />
-                            ) : (
-                              <Eye className="h-4 w-4" />
-                            )}
+                          <Input placeholder="Enter your password" type={showPassword ? "text" : "password"} className="pl-10 pr-10" {...field} />
+                          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700">
+                            {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                           </button>
                         </div>
                       </FormControl>
@@ -158,12 +107,7 @@ export default function DoctorLogin() {
                   )}
                 />
 
-                <Button
-                  variant="secondary"
-                  type="submit"
-                  className="w-full"
-                  disabled={form.formState.isSubmitting}
-                >
+                <Button variant="secondary" type="submit" className="w-full" disabled={form.formState.isSubmitting}>
                   {form.formState.isSubmitting ? (
                     <div className="flex items-center justify-center font-bold">
                       <Loader className="spinner-border animate-spin" />
@@ -175,7 +119,6 @@ export default function DoctorLogin() {
                     </span>
                   )}
                 </Button>
-
                 <div className="flex justify-between">
                   <Link href="/forgot-password" className="text-xs text-primary">
                     Forgot password?
@@ -186,7 +129,6 @@ export default function DoctorLogin() {
           </CardContent>
         </Card>
       </div>
-
       <Footer />
     </div>
   );

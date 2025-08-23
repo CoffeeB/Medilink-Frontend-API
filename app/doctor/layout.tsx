@@ -12,7 +12,7 @@ const DoctorLayout = ({ children }: { children: React.ReactNode }) => {
 
   // useEffect(() => {
   //   if (!isAuthenticated()) {
-  //     router.push("/auth/client/login");
+  //     router.push("/auth/doctor/login");
   //   }
   // }, [router]);
 

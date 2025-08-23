@@ -7,6 +7,15 @@ import { Button } from './ui/button'
 import Link from 'next/link'
 // import { usePathname } from 'next/navigation'
 import { Menu, X } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import Cookies from 'js-cookie';
+import { Bell } from 'lucide-react';
 
 const DoctorHeader = () => {
   // const pathname = usePathname()
@@ -15,6 +24,11 @@ const DoctorHeader = () => {
   const isActive = (path: string) => {
     return typeof window !== "undefined" && window.location.pathname === path;
   };
+
+ const logout = () => {
+  Cookies.remove("token");
+  Cookies.remove("user");
+};
 
   // const isActive = (path: string) => pathname === path
 
@@ -43,11 +57,36 @@ const DoctorHeader = () => {
 
           {/* Right Side - Profile */}
           <div className="flex items-center space-x-4">
-            <Link href="/doctor/profile">
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full bg-secondary hover:bg-secondary text-white hover:text-white cursor-pointer">
-                MI
-              </Button>
-            </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button className='text-primary hover:text-primary' asChild variant="ghost" size="icon">
+                  <Bell className="h-6 w-6 cursor-pointer" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56 bg-white" align="end" forceMount>
+                <DropdownMenuItem className='cursor-pointer'>Appointment booked by Mrs Jane</DropdownMenuItem>
+                <DropdownMenuItem className='cursor-pointer'>Update Notification from Tech</DropdownMenuItem>
+                <DropdownMenuItem className='cursor-pointer'>Notification 3</DropdownMenuItem>
+                </DropdownMenuContent>
+            </DropdownMenu>
+
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full bg-secondary hover:bg-secondary text-white hover:text-white cursor-pointer">
+                  MI
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56 bg-white" align="end" forceMount>
+                <DropdownMenuSeparator />
+                <Link href="/doctor/profile">
+                  <DropdownMenuItem className='cursor-pointer'>Profile</DropdownMenuItem>
+                </Link>
+                <DropdownMenuSeparator />
+                <Link href="/doctor/login" onClick={logout}>
+                <DropdownMenuItem className='cursor-pointer'>Log out</DropdownMenuItem>
+                </Link>
+              </DropdownMenuContent>
+            </DropdownMenu>
             {/* Mobile Menu Toggle */}
             <button
               className="md:hidden p-2"
@@ -61,11 +100,11 @@ const DoctorHeader = () => {
         {/* Mobile Nav */}
         {mobileOpen && (
           <nav className="md:hidden bg-white border-t flex flex-col space-y-2 px-6 py-4">
-            <Link onClick={() => setMobileOpen(false)} href="/doctor/dashboard" className={`hover:text-primary ${isActive('/doctor/dashboard') ? 'text-primary' : ''}`}>Home</Link>
             
             <Link onClick={() => setMobileOpen(false)} href="/doctor/appointments" className={`hover:text-primary ${isActive('/doctor/appointments') ? 'text-primary' : ''}`}>Appointments</Link>
             <Link onClick={() => setMobileOpen(false)} href="/doctor/messaging" className={`hover:text-primary ${isActive('/doctor/messaging') ? 'text-primary' : ''}`}>Messaging</Link>
-            <Link onClick={() => setMobileOpen(false)} href="/doctor/client" className={`hover:text-primary ${isActive('/doctor/diagnosis') ? 'text-primary' : ''}`}>Client</Link>
+
+            <Link onClick={() => setMobileOpen(false)} href="/doctor/client" className={`hover:text-primary ${isActive('/doctor/client') ? 'text-primary' : ''}`}>Client</Link>
           </nav>
         )}
       </div>

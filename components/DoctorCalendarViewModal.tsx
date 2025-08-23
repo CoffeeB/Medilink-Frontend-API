@@ -13,6 +13,7 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog"
 import "@/components/DoctorCalendarView/styles.css"
+import { Button } from "./ui/button"
 
 interface EventData {
   id: string
@@ -73,6 +74,7 @@ export default function DoctorCalendarView({ events }: DoctorCalendarViewProps) 
           {selectedEvent.sex && (
             <p><strong>Sex:</strong> {selectedEvent.sex}</p>
           )}
+          <Button className="cursor-pointer">Confirm</Button>
         </div>
       </>
     )}

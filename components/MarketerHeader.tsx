@@ -6,7 +6,14 @@ import Image from 'next/image'
 import { Button } from './ui/button'
 import Link from 'next/link'
 // import { usePathname } from 'next/navigation'
-import { Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 
 const MarketerHeader = () => {
   // const pathname = usePathname()
@@ -42,11 +49,22 @@ const MarketerHeader = () => {
 
           {/* Right Side - Profile */}
           <div className="flex items-center space-x-4">
-            <Link href="/marketer/profile">
-              <Button variant="ghost" className="relative h-8 w-8 rounded-full bg-secondary hover:bg-secondary text-white hover:text-white cursor-pointer">
-                MI
-              </Button>
-            </Link>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full bg-secondary hover:bg-secondary text-white hover:text-white cursor-pointer">
+                  MI
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-56 bg-white" align="end" forceMount>
+                <DropdownMenuSeparator />
+                <Link href="/marketer/profile">
+                  <DropdownMenuItem className='cursor-pointer'>Profile</DropdownMenuItem>
+                </Link>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className='cursor-pointer'>Log out</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
             {/* Mobile Menu Toggle */}
             <button
               className="md:hidden p-2"
@@ -60,9 +78,9 @@ const MarketerHeader = () => {
         {/* Mobile Nav */}
         {mobileOpen && (
           <nav className="md:hidden bg-white border-t flex flex-col space-y-2 px-6 py-4">            
-            <Link onClick={() => setMobileOpen(false)} href="/doctor/appointments" className={`hover:text-primary ${isActive('/doctor/appointments') ? 'text-primary' : ''}`}>Appointments</Link>
-            <Link onClick={() => setMobileOpen(false)} href="/doctor/messaging" className={`hover:text-primary ${isActive('/doctor/messaging') ? 'text-primary' : ''}`}>Messaging</Link>
-            <Link onClick={() => setMobileOpen(false)} href="/doctor/client" className={`hover:text-primary ${isActive('/doctor/diagnosis') ? 'text-primary' : ''}`}>Register a Doctor</Link>
+            <Link onClick={() => setMobileOpen(false)} href="/marketer/appointments" className={`hover:text-primary ${isActive('/marketer/appointments') ? 'text-primary' : ''}`}>Appointments</Link>
+            <Link onClick={() => setMobileOpen(false)} href="/marketer/messages" className={`hover:text-primary ${isActive('/marketer/messages') ? 'text-primary' : ''}`}>Messaging</Link>
+            <Link onClick={() => setMobileOpen(false)} href="/marketer/register-a-doc" className={`hover:text-primary ${isActive('/marketer/register-a-doc') ? 'text-primary' : ''}`}>Register a Doctor</Link>
           </nav>
         )}
       </div>

@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Upload, FileText, CreditCard, Shield } from 'lucide-react';
 import countries from "world-countries";
+import { Eye, EyeOff } from "lucide-react";
 
 const phoneSchema = z
   .string()
@@ -40,6 +41,8 @@ const registerFormSchema = z.object({
   phoneNumber: phoneSchema,
   email: z.string().email("Invalid email address"),
   address: z.string().min(1, "Address is required"),
+  password: z.string().min(8, "Password must be at least 8 characters long"),
+  confirmPassword: z.string().min(1, "Please confirm your password"),
   streetAddress: z.string().min(1, "Street Address is required"),
   streetAddressLine2: z.string().optional(),
   city: z.string().min(1, "City is required"),
@@ -49,6 +52,9 @@ const registerFormSchema = z.object({
   driversLicense: z.any().optional(),
   ssn: z.any().optional(),
   resume: z.any().optional(),
+}).refine((data) => data.password === data.confirmPassword, {
+  path: ["confirmPassword"], // error will show under confirmPassword
+  message: "Passwords do not match",
 });
 
 type FormValues = z.infer<typeof registerFormSchema>;
@@ -56,6 +62,7 @@ type FormValues = z.infer<typeof registerFormSchema>;
 export default function MarketerRegister() {
   // const [activeTab, setActiveTab] = useState<'marketer' | 'doctor'>('marketer');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const router = useRouter();
 
   const form = useForm<FormValues>({
@@ -73,6 +80,8 @@ export default function MarketerRegister() {
       region: "",
       postalCode: "",
       country: "",
+      password: "",
+      confirmPassword: "",
     },
   });
 
@@ -344,6 +353,74 @@ export default function MarketerRegister() {
                                 type="email"
                                 {...field} 
                               />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-gray-700">
+                            <span className="font-medium">Password</span>
+                          </FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Input
+                                placeholder="Enter your password"
+                                type={showPassword ? "text" : "password"}
+                                autoComplete="current-password" // ✅ Better UX
+                                {...field}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700"
+                              >
+                                {showPassword ? (
+                                  <EyeOff className="h-4 w-4" />
+                                ) : (
+                                  <Eye className="h-4 w-4" />
+                                )}
+                              </button>
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="confirmPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-gray-700">
+                            <span className="font-medium">Confirm Password</span>
+                          </FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Input
+                                placeholder="Confirm your password"
+                                type={showPassword ? "text" : "password"}
+                                autoComplete="current-password" 
+                                {...field}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700"
+                              >
+                                {showPassword ? (
+                                  <EyeOff className="h-4 w-4" />
+                                ) : (
+                                  <Eye className="h-4 w-4" />
+                                )}
+                              </button>
                             </div>
                           </FormControl>
                           <FormMessage />

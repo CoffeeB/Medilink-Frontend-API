@@ -1,52 +1,34 @@
-import React from 'react'
-import { Card, CardContent } from '@/components/ui/card'
-import { DoctorEventList } from '@/components/DoctorEventList'
-import DoctorCalendarView from '@/components/DoctorCalendarViewModal'
-import { Event } from '@/types/calendar'
+"use client";
 
-const mockEvents : Event[] = [
-  {
-    id: "1",
-    title: "Consultation with John",
-    clientName: "John",
-    date: "2025-08-06",
-    time: "15:27",
-    location: "Clinic A",
-    address: "123 Street, City",
-    age: "35",
-    sex: "male",
-    type: "client-meeting",
-    signature: "",
-  },
-  {
-    id: "2",
-    title: "Consultation with Doe",
-    clientName: "Doe",
-    date: "2025-08-20",
-    time: "15:27",
-    location: "Clinic A",
-    address: "123 Street, City",
-    age: "28",
-    sex: "male",
-    type: "client-meeting",
-    signature: "",
-  },
-  {
-    id: "3",
-    title: "Follow-up with Jane",
-    clientName: "Jane",
-    date: "2025-08-06",
-    time: "15:27",
-    location: "Clinic A",
-    address: "123 Street, City",
-    age: "32",
-    sex: "female",
-    type: "client-meeting",
-    signature: "",
-  },
-]
+import React, { useEffect, useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { DoctorEventList } from "@/components/DoctorEventList";
+import DoctorCalendarView from "@/components/DoctorCalendarViewModal";
+import { Event } from "@/types/calendar";
+import { seeAllAppointments } from "@/hooks/appointments";
 
 const ClientAppointments = () => {
+  const [events, setEvents] = useState<Event[]>([]);
+  const [error, setError] = useState<Event[]>();
+
+  useEffect(() => {
+    const appointments = async () => {
+      const doctor = true;
+      const marketer = false;
+      try {
+        const response = await seeAllAppointments(doctor, marketer);
+
+        console.log(response);
+
+        setEvents(response.data);
+      } catch (error: any) {
+        console.log(error);
+        setError(error.response?.data?.error || "Failed to fetch appointments. Please try again.");
+      }
+    };
+
+    appointments();
+  }, []);
   return (
     <div className="container max-w-[1350px] mx-auto p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
       <Card>
@@ -55,12 +37,12 @@ const ClientAppointments = () => {
             <DoctorEventList events={mockEvents} />
           </div>
           <div className="flex-1">
-            <DoctorCalendarView events={mockEvents} />
+            <DoctorCalendarView events={events} />
           </div>
         </CardContent>
       </Card>
     </div>
-  )
-}
+  );
+};
 
-export default ClientAppointments
+export default ClientAppointments;

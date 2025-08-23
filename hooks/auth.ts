@@ -1,10 +1,10 @@
-import { z } from 'zod';
-import Cookies from 'js-cookie';
-import axiosInstance from '../lib/axios';
+import { email, z } from "zod";
+import Cookies from "js-cookie";
+import axiosInstance from "../lib/axios";
 
 export const loginFormSchema = z.object({
-  username: z.string().min(1, 'Username is required'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  email: z.string().min(1, "Email is required"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 export type LoginFormValues = z.infer<typeof loginFormSchema>;
@@ -26,60 +26,63 @@ export type LoginResponse = {
 };
 
 export const login = async (data: LoginFormValues): Promise<LoginResponse> => {
-  const response = await axiosInstance.post('/api/auth/login', {
-    username: data.username,
+  const response = await axiosInstance.post("/api/auth/login", {
+    email: data.email,
     password: data.password,
   });
+  const { token } = response.data;
 
-  const { user, token } = response.data;
-  Cookies.set('token', token, {
+  Cookies.set("token", token, {
     secure: true,
-    sameSite: 'strict',
+    sameSite: "strict",
     expires: 7,
   });
 
-  Cookies.set('user', JSON.stringify(user), {
+  const userResponse = await axiosInstance.get("/api/auth/me", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  const user = userResponse.data;
+
+  Cookies.set("user", JSON.stringify({ id: user._id, email: user.email, role: user.role }), {
     secure: true,
-    sameSite: 'strict',
+    sameSite: "strict",
     expires: 7,
   });
 
-  return response.data;
+  return { user, token };
 };
 
 export const logout = () => {
-  Cookies.remove('token');
-  Cookies.remove('user');
+  Cookies.remove("token");
+  Cookies.remove("user");
 };
 
 export const getStoredUser = (): User | null => {
-  const userStr = Cookies.get('user');
+  const userStr = Cookies.get("user");
   return userStr ? JSON.parse(userStr) : null;
 };
 
 export const isAuthenticated = (): boolean => {
-  return !!Cookies.get('token');
+  return !!Cookies.get("token");
 };
 
 export const isAdmin = (): boolean => {
   const user = getStoredUser();
-  return user?.role === 'ADMIN';
+  return user?.role === "ADMIN";
 };
 
-export const sendForgotPassword = async (data: {
-  email: string;
-}): Promise<{ message: string }> => {
-  const response = await axiosInstance.post('/api/auth/forgot-password', {
+export const sendForgotPassword = async (data: { email: string }): Promise<{ message: string }> => {
+  const response = await axiosInstance.post("/api/auth/forgot-password", {
     email: data.email,
   });
   return response.data;
 };
 
-export const sendResetPassword = async (data: {
-  password: string;
-  token: string;
-}): Promise<{ message: string }> => {
-  const response = await axiosInstance.post('/api/auth/reset-password', {
+export const sendResetPassword = async (data: { password: string; token: string }): Promise<{ message: string }> => {
+  const response = await axiosInstance.post("/api/auth/reset-password", {
     password: data.password,
     token: data.token,
   });

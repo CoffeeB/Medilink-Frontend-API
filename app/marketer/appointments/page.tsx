@@ -1,10 +1,11 @@
-"use client"
+"use client";
 
-import React, { useState } from 'react'
-import { Card, CardContent } from '@/components/ui/card'
-import { Event } from '@/types/calendar'
-import { EventList } from '@/components/EventList'
-import CalendarView from '@/components/CalendarView'
+import React, { useEffect, useState } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Event } from "@/types/calendar";
+import { EventList } from "@/components/EventList";
+import CalendarView from "@/components/CalendarView";
+import { seeAllAppointments } from "@/hooks/appointments";
 
 const initialEvents: Event[] = [
   {
@@ -46,45 +47,58 @@ const initialEvents: Event[] = [
     type: "client-meeting",
     signature: "",
   },
-]
+];
 
 const ClientAppointments = () => {
-  const [events, setEvents] = useState<Event[]>(initialEvents)
+  const [events, setEvents] = useState<Event[]>(initialEvents);
+  const [error, setError] = useState<Event[]>(initialEvents);
 
   const handleAddEvent = (newEvent: Event) => {
-    setEvents((prev) => [...prev, newEvent])
-  }
+    setEvents((prev) => [...prev, newEvent]);
+  };
 
   const handleUpdateEvent = (updatedEvent: Event) => {
-    setEvents((prev) => prev.map(ev => ev.id === updatedEvent.id ? updatedEvent : ev))
-  }
+    setEvents((prev) => prev.map((ev) => (ev.id === updatedEvent.id ? updatedEvent : ev)));
+  };
 
   const handleDeleteEvent = (id: string) => {
-    setEvents((prev) => prev.filter(ev => ev.id !== id))
-  }
+    setEvents((prev) => prev.filter((ev) => ev.id !== id));
+  };
+
+  useEffect(() => {
+    const appointments = async () => {
+      try {
+        const response = await seeAllAppointments();
+
+        console.log(response);
+
+        setEvents(response.data);
+      } catch (error: any) {
+        console.log(error);
+        setError(error.response?.data?.error || "Failed to fetch appointments. Please try again.");
+      }
+    };
+
+    appointments();
+  }, []);
 
   return (
-    <div className="container max-w-[1350px] mx-auto p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
+    <div className="container max-w-[1350px] mx-auto p-6 space-y-6">
       <Card>
-        <CardContent className='flex flex-col lg:flex-row'>
+        <CardContent className="flex">
           {/* Sidebar */}
-          <div className="w-full lg:w-80 border-b lg:border-b-0 lg:border-r bg-background">
+          <div className="w-80 border-r bg-background">
             <EventList events={events} />
           </div>
 
           {/* Calendar */}
           <div className="flex-1">
-            <CalendarView 
-              events={events}
-              onAddEvent={handleAddEvent}
-              onUpdateEvent={handleUpdateEvent} 
-              onDeleteEvent={handleDeleteEvent}
-            />
+            <CalendarView events={events} onAddEvent={handleAddEvent} onUpdateEvent={handleUpdateEvent} onDeleteEvent={handleDeleteEvent} />
           </div>
         </CardContent>
       </Card>
     </div>
-  )
-}
+  );
+};
 
-export default ClientAppointments
+export default ClientAppointments;

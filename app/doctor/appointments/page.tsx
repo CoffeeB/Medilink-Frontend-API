@@ -34,7 +34,7 @@ const ClientAppointments = () => {
       <Card>
         <CardContent className='flex flex-col lg:flex-row'>
           <div className="w-full lg:w-80 border-b lg:border-b-0 lg:border-r bg-background">
-            <DoctorEventList events={mockEvents} />
+            <DoctorEventList events={events} />
           </div>
           <div className="flex-1">
             <DoctorCalendarView events={events} />

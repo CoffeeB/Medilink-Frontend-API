@@ -39,19 +39,27 @@ const registerFormSchema = z.object({
   dateOfBirth: z.string().min(1, "Date of birth is required"),
   phoneNumber: phoneSchema,
   email: z.string().email("Invalid email address"),
-  address: z.string().min(1, "Address is required"),
-  streetAddress: z.string().min(1, "Street Address is required"),
-  streetAddressLine2: z.string().optional(),
-  city: z.string().min(1, "City is required"),
-  region: z.string().min(1, "Region is required"),
-  postalCode: z.string().min(1, "Postal/Zip code is required"),
-  country: z.string().min(1, "Country is required"),
+    // address: z.string().min(1, "Address is required"),
+    // streetAddress: z.string().min(1, "Street Address is required"),
+    // streetAddressLine2: z.string().optional(),
+    // city: z.string().min(1, "City is required"),
+    // region: z.string().min(1, "Region is required"),
+    // postalCode: z.string().min(1, "Postal/Zip code is required"),
+    // country: z.string().min(1, "Country is required"),
   password: z.string().min(6, "Password must be at least 6 characters"),
   confirmPassword: z.string().min(6, "Confirm password is required"),
   certificate: z.any().optional(),
   driversLicense: z.any().optional(),
   ssn: z.any().optional(),
   resume: z.any().optional(),
+  address: z.object({
+    street: z.string().min(1, "Street is required"),
+    streetLine2: z.string().optional(),
+    city: z.string().min(1, "City is required"),
+    region: z.string().min(1, "Region is required"),
+    postalCode: z.string().min(1, "Postal code is required"),
+    country: z.string().min(1, "Country is required"),
+  }),
 }).refine((data) => data.password === data.confirmPassword, {
   path: ["confirmPassword"], // error will show under confirmPassword
   message: "Passwords do not match",
@@ -59,19 +67,10 @@ const registerFormSchema = z.object({
 
 type FormValues = z.infer<typeof registerFormSchema>;
 
-export default function MarketerRegister() {
-  // const [activeTab, setActiveTab] = useState<'marketer' | 'doctor'>('marketer');
+export default function RegisterADoctor() {
   const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
-  // const pathname = usePathname();
-
-  // const activeTab =
-  //   pathname.includes("/doctor") ? "doctor" : "marketer";
-
-  // const handleTabClick = (tab: 'marketer' | 'doctor') => {
-  //   router.push(`/${tab}/register`);
-  // };
 
   const form = useForm<FormValues>({
     resolver: zodResolver(registerFormSchema),
@@ -82,14 +81,16 @@ export default function MarketerRegister() {
       dateOfBirth: "",
       phoneNumber: "",
       email: "",   
-      streetAddress: "",
-      streetAddressLine2: "",
-      city: "",
-      region: "",
-      postalCode: "",
-      country: "",
       password: "",
       confirmPassword: "",
+        address: {
+          street: "",
+          streetLine2: "",
+          city: "",
+          region: "",
+          postalCode: "",
+          country: "",
+      },
     },
   });
 
@@ -222,6 +223,7 @@ export default function MarketerRegister() {
             </CardHeader>
             <CardContent>
               <Form {...form}>
+                {/* {JSON.stringify(form.formState.errors)} */}
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                   {/* Personal Information */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -416,7 +418,7 @@ export default function MarketerRegister() {
                   {/* Address - Full Width */}
                   <FormField
                     control={form.control}
-                    name="streetAddress"
+                    name="address.street"
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-gray-700 font-medium">Street Address</FormLabel>
@@ -435,7 +437,7 @@ export default function MarketerRegister() {
 
                   <FormField
                     control={form.control}
-                    name="streetAddressLine2"
+                    name="address.streetLine2"
                     render={({ field }) => (
                       <FormItem>
                         <FormControl>
@@ -451,34 +453,49 @@ export default function MarketerRegister() {
                     )}
                   />
 
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid grid-cols-2 gap-6">                    
                     <FormField
                       control={form.control}
-                      name="city"
+                      name="address.city"
                       render={({ field }) => (
-                        <Input placeholder="City" {...field} />
+                        <FormItem>
+                          <FormControl>
+                            <Input placeholder="City" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    
+                    <FormField
+                      control={form.control}
+                      name="address.region"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormControl>
+                            <Input placeholder="Region" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
                       )}
                     />
 
                     <FormField
                       control={form.control}
-                      name="region"
+                      name="address.postalCode"
                       render={({ field }) => (
-                        <Input placeholder="Region" {...field} />
+                        <FormItem>
+                          <FormControl>
+                            <Input placeholder="Postal / Zip Code" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
                       )}
                     />
 
                     <FormField
                       control={form.control}
-                      name="postalCode"
-                      render={({ field }) => (
-                        <Input placeholder="Postal / Zip Code" {...field} />
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="country"
+                      name="address.country"
                       render={({ field }) => (
                         <select
                           {...field}
@@ -511,7 +528,7 @@ export default function MarketerRegister() {
                     <Button
                       type="submit"
                       variant="secondary"
-                      className="w-full py-3 text-lg font-semibold"
+                      className="w-full py-3 text-lg font-semibold cursor-pointer"
                       disabled={isSubmitting}
                     >
                       {isSubmitting ? 'Submitting...' : 'Submit'}

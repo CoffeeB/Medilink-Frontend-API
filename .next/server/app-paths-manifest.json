@@ -1,0 +1,7 @@
+{
+  "/page": "app/page.js",
+  "/(auth)/marketer/register/page": "app/(auth)/marketer/register/page.js",
+  "/(auth)/marketer/login/page": "app/(auth)/marketer/login/page.js",
+  "/marketer/messages/page": "app/marketer/messages/page.js",
+  "/marketer/register-a-doc/page": "app/marketer/register-a-doc/page.js"
+}

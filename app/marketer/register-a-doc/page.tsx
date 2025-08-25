@@ -1,8 +1,7 @@
-'use client';
+"use client";
 
-import React, { useState } from 'react';
-// import { useRouter } from 'nextjs-toploader/app';
-import { useRouter } from 'next/navigation';
+import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
@@ -10,27 +9,24 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Upload, FileText, CreditCard, Shield } from 'lucide-react';
+import { Upload, FileText, CreditCard, Shield } from "lucide-react";
 import countries from "world-countries";
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff } from "lucide-react";
+import { signup } from "@/hooks/registration";
 
 const phoneSchema = z
   .string()
   .trim()
   .min(1, "Phone number is required")
-  .refine(
-    (val) =>
-      /^(\+234|0)\d{10}$/.test(val.replace(/\s+/g, "")) ||
-      /^(\+?\d{6,14})$/.test(val.replace(/\s+/g, "")),
-    "Invalid phone number format"
-  );
+  .refine((val) => /^(\+234|0)\d{10}$/.test(val.replace(/\s+/g, "")) || /^(\+?\d{6,14})$/.test(val.replace(/\s+/g, "")), "Invalid phone number format");
 
-  const countryOptions = countries
+const countryOptions = countries
   .map((country) => ({
     label: country.name.common,
     value: country.cca2, // ISO 2-letter code
   }))
   .sort((a, b) => a.label.localeCompare(b.label));
+
 
 const registerFormSchema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -97,12 +93,26 @@ export default function RegisterADoctor() {
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
     try {
-      // Handle form submission here
-      console.log('Form data:', data);
-      // Redirect after successful registration
-      router.push('/marketer/login');
-    } catch (error) {
-      console.error('Registration error:', error);
+      // Convert form values to FormData for file + text fields
+      const formData = new FormData();
+      Object.entries(data).forEach(([key, value]) => {
+        if (value) {
+          formData.append(key, value as any);
+        }
+      });
+
+      // Append uploaded files
+      if (uploadedFiles.certificate) formData.append("certificate", uploadedFiles.certificate);
+      if (uploadedFiles.driversLicense) formData.append("driversLicense", uploadedFiles.driversLicense);
+      if (uploadedFiles.ssn) formData.append("ssn", uploadedFiles.ssn);
+      if (uploadedFiles.resume) formData.append("resume", uploadedFiles.resume);
+
+      const response = await signup(formData);
+
+      console.log("Signup success:", response);
+      router.push("/marketer/login");
+    } catch (error: any) {
+      console.error("Registration error:", error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -115,7 +125,7 @@ export default function RegisterADoctor() {
     resume?: File;
   }>({});
 
-  const [isDragging, setIsDragging] = useState<string | null>(null)
+  const [isDragging, setIsDragging] = useState<string | null>(null);
 
   const handleFileUpload = (field: keyof typeof uploadedFiles, file: File) => {
     form.setValue(field, file);
@@ -127,15 +137,9 @@ export default function RegisterADoctor() {
     setUploadedFiles((prev) => ({ ...prev, [field]: undefined }));
   };
 
-  const renderFileSection = (
-    field: keyof typeof uploadedFiles,
-    icon: React.ReactNode,
-    title: string
-  ) => (
+  const renderFileSection = (field: keyof typeof uploadedFiles, icon: React.ReactNode, title: string) => (
     <div
-      className={`border-2 border-dashed rounded-lg p-6 transition-colors bg-gray-100 ${
-        isDragging === field ? "border-blue-500 bg-blue-50" : "border-gray-300 bg-gray-50"
-      }`}
+      className={`border-2 border-dashed rounded-lg p-6 transition-colors bg-gray-100 ${isDragging === field ? "border-blue-500 bg-blue-50" : "border-gray-300 bg-gray-50"}`}
       onDragOver={(e) => {
         e.preventDefault();
         setIsDragging(field);
@@ -146,24 +150,16 @@ export default function RegisterADoctor() {
         setIsDragging(null);
         const file = e.dataTransfer.files?.[0];
         if (file) handleFileUpload(field, file);
-      }}
-    >
+      }}>
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
           {icon}
           <div>
             <p className="text-sm font-medium text-gray-700">{title}</p>
-            <p className="text-xs text-gray-500">
-              Drag & drop your file or click to upload
-            </p>
+            <p className="text-xs text-gray-500">Drag & drop your file or click to upload</p>
           </div>
         </div>
-        <Button
-          type="button"
-          variant="secondary"
-          size="sm"
-          onClick={() => document.getElementById(field)?.click()}
-        >
+        <Button type="button" variant="secondary" size="sm" onClick={() => document.getElementById(field)?.click()}>
           <Upload className="h-4 w-4 mr-2" />
           {uploadedFiles[field] ? "Change" : "Upload"}
         </Button>
@@ -185,19 +181,11 @@ export default function RegisterADoctor() {
         <div className="mt-4 flex items-center justify-between bg-white p-3 rounded-lg shadow-sm">
           <div className="flex items-center space-x-3">
             <div>
-              <p className="text-sm font-medium text-gray-700">
-                {uploadedFiles[field]?.name}
-              </p>
-              <p className="text-xs text-gray-500">
-                {((uploadedFiles[field]?.size || 0) / 1024).toFixed(1)} KB
-              </p>
+              <p className="text-sm font-medium text-gray-700">{uploadedFiles[field]?.name}</p>
+              <p className="text-xs text-gray-500">{((uploadedFiles[field]?.size || 0) / 1024).toFixed(1)} KB</p>
             </div>
           </div>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => handleRemoveFile(field)}
-          >
+          <Button variant="ghost" size="sm" onClick={() => handleRemoveFile(field)}>
             Remove
           </Button>
         </div>
@@ -217,9 +205,7 @@ export default function RegisterADoctor() {
           {/* Registration Form */}
           <Card className="shadow-xl border-none">
             <CardHeader>
-              <h2 className="text-xl font-semibold text-gray-900">
-                Doctor Registration
-              </h2>
+              <h2 className="text-xl font-semibold text-gray-900">Doctor Registration</h2>
             </CardHeader>
             <CardContent>
               <Form {...form}>
@@ -235,11 +221,7 @@ export default function RegisterADoctor() {
                           <FormLabel className="text-gray-700 font-medium">First name</FormLabel>
                           <FormControl>
                             <div className="relative">
-                              <Input  
-                                placeholder="Enter first name" 
-                                type='text'
-                                {...field} 
-                              />
+                              <Input placeholder="Enter first name" type="text" {...field} />
                             </div>
                           </FormControl>
                           <FormMessage />
@@ -255,11 +237,7 @@ export default function RegisterADoctor() {
                           <FormLabel className="text-gray-700 font-medium">Date of Birth</FormLabel>
                           <FormControl>
                             <div className="relative">
-                              <Input 
-                                placeholder="dd/mm/yyyy" 
-                                type='date'
-                                {...field} 
-                              />
+                              <Input placeholder="dd/mm/yyyy" type="date" {...field} />
                             </div>
                           </FormControl>
                           <FormMessage />
@@ -275,11 +253,7 @@ export default function RegisterADoctor() {
                           <FormLabel className="text-gray-700 font-medium">Middle name (optional)</FormLabel>
                           <FormControl>
                             <div className="relative">
-                              <Input  
-                                placeholder="Enter middle name" 
-                                type='text'
-                                {...field} 
-                              />
+                              <Input placeholder="Enter middle name" type="text" {...field} />
                             </div>
                           </FormControl>
                           <FormMessage />
@@ -295,11 +269,7 @@ export default function RegisterADoctor() {
                           <FormLabel className="text-gray-700 font-medium">Phone Number</FormLabel>
                           <FormControl>
                             <div className="relative">
-                              <Input  
-                                placeholder="Enter Phone number" 
-                                type='tel'
-                                {...field} 
-                              />
+                              <Input placeholder="Enter Phone number" type="tel" {...field} />
                             </div>
                           </FormControl>
                           <FormMessage />
@@ -315,11 +285,7 @@ export default function RegisterADoctor() {
                           <FormLabel className="text-gray-700 font-medium">Last name</FormLabel>
                           <FormControl>
                             <div className="relative">
-                              <Input  
-                                placeholder="Enter last name"
-                                type='text' 
-                                {...field} 
-                              />
+                              <Input placeholder="Enter last name" type="text" {...field} />
                             </div>
                           </FormControl>
                           <FormMessage />
@@ -335,11 +301,53 @@ export default function RegisterADoctor() {
                           <FormLabel className="text-gray-700 font-medium">Email</FormLabel>
                           <FormControl>
                             <div className="relative">
-                              <Input  
-                                placeholder="Enter email" 
-                                type="email"
-                                {...field} 
+                              <Input placeholder="Enter email" type="email" {...field} />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="password"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-gray-700">
+                            <span className="font-medium">Password</span>
+                          </FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Input
+                                placeholder="Enter your password"
+                                type={showPassword ? "text" : "password"}
+                                autoComplete="current-password" // ✅ Better UX
+                                {...field}
                               />
+                              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700">
+                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                              </button>
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="confirmPassword"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-gray-700">
+                            <span className="font-medium">Confirm Password</span>
+                          </FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Input placeholder="Confirm your password" type={showPassword ? "text" : "password"} autoComplete="current-password" {...field} />
+                              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700">
+                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                              </button>
                             </div>
                           </FormControl>
                           <FormMessage />
@@ -424,10 +432,7 @@ export default function RegisterADoctor() {
                         <FormLabel className="text-gray-700 font-medium">Street Address</FormLabel>
                         <FormControl>
                           <div className="relative">
-                            <Input 
-                              placeholder="Street Address" 
-                              {...field} 
-                            />
+                            <Input placeholder="Street Address" {...field} />
                           </div>
                         </FormControl>
                         <FormMessage />
@@ -442,10 +447,7 @@ export default function RegisterADoctor() {
                       <FormItem>
                         <FormControl>
                           <div className="relative">
-                            <Input 
-                              placeholder="Street Address Line 2" 
-                              {...field} 
-                            />
+                            <Input placeholder="Street Address Line 2" {...field} />
                           </div>
                         </FormControl>
                         <FormMessage />
@@ -497,25 +499,28 @@ export default function RegisterADoctor() {
                       control={form.control}
                       name="address.country"
                       render={({ field }) => (
-                        <select
-                          {...field}
-                          className="border border-gray-300 rounded-md p-2 w-full"
-                        >
-                          <option value="">Select Country</option>
-                          {countryOptions.map((country) => (
-                            <option key={country.value} value={country.value}>
-                              {country.label}
-                            </option>
-                          ))}
-                        </select>
+                        <FormItem className="w-full">
+                          <FormLabel>Country</FormLabel>
+                          <FormControl>
+                            <select {...field} className="w-full rounded-md border px-3 py-2">
+                              <option value="">Select Country</option>
+                              {countryOptions.map((c) => (
+                                <option key={c.value} value={c.value}>
+                                  {c.label}
+                                </option>
+                              ))}
+                            </select>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
                       )}
                     />
                   </div>
 
                   {/* Document Upload Sections */}
-                    <h3 className="text-lg font-medium text-gray-900">Document Upload</h3>
-                    
-                    {/* Drivers License */}
+                  <h3 className="text-lg font-medium text-gray-900">Document Upload</h3>
+
+                  {/* Drivers License */}
                   <div className="grid gap-6 ">
                     {renderFileSection("certificate", <FileText className="h-6 w-6 text-gray-400" />, "Certificate")}
                     {renderFileSection("driversLicense", <CreditCard className="h-6 w-6 text-gray-400" />, "Driver's License")}
@@ -543,4 +548,3 @@ export default function RegisterADoctor() {
     </div>
   );
 }
-

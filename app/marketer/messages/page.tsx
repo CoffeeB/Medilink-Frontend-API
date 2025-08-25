@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { Search, Phone, Video, Smile, Paperclip, Send, Check, CheckCheck, PhoneMissed, ListFilter, Camera, Mic, MessageSquareDot, Pen, Users, Signature, FileText, ImagePlay } from "lucide-react";
+import axiosInstance from "@/lib/axios";
 
 // Placeholder data
 const contacts = [
@@ -126,8 +127,37 @@ export default function ChatDashboard() {
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   // const [audioChunks, setAudioChunks] = useState<Blob[]>([]);
   const [recordedAudioURL, setRecordedAudioURL] = useState<string | null>(null);
+  const [sending, setSending] = useState(false);
 
   const filteredContacts = contacts.filter((contact) => contact.name.toLowerCase().includes(searchQuery.toLowerCase()));
+
+  const handleSend = async () => {
+    const text = messageInput.trim();
+    if (!text || sending) return;
+
+    setSending(true);
+    try {
+      const res = await axiosInstance.post(
+        "/api/messages",
+        {
+          recipientId: selectedContact.id, // request payload
+          text,
+        },
+        {
+          headers: { "Content-Type": "application/json" },
+          withCredentials: true, // important if you’re using cookies
+        }
+      );
+
+      // success: clear the input
+      setMessageInput("");
+    } catch (e: any) {
+      console.error("Send failed:", e.response?.data || e.message);
+      // optional: show a toast or inline error
+    } finally {
+      setSending(false);
+    }
+  };
 
   return (
     <div className="flex h-screen bg-white p-10">
@@ -304,15 +334,15 @@ export default function ChatDashboard() {
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
                     className="w-full pl-12 px-4 py-2 bg-white rounded-lg border-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    onKeyPress={(e) => {
+                    onKeyDown={(e) => {
                       if (e.key === "Enter" && messageInput.trim()) {
-                        // send message logic here
-                        setMessageInput("");
+                        e.preventDefault();
+                        handleSend();
                       }
                     }}
                   />
 
-                  <button className="cursor-pointer absolute right-3 top-1/2 transform -translate-y-1/2 p-2 bg-blue-900 text-white rounded-full hover:bg-blue-600 transition-colors disabled:opacity-50" disabled={!messageInput.trim()}>
+                  <button type="button" onClick={handleSend} className="cursor-pointer absolute right-3 top-1/2 transform -translate-y-1/2 p-2 bg-blue-900 text-white rounded-full hover:bg-blue-600 transition-colors disabled:opacity-50" disabled={!messageInput.trim()}>
                     <Send className="w-5 h-5" />
                   </button>
                 </>

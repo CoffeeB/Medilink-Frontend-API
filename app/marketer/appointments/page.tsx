@@ -5,56 +5,20 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Event } from "@/types/calendar";
 import { EventList } from "@/components/EventList";
 import CalendarView from "@/components/CalendarView";
-import { seeAllAppointments } from "@/hooks/appointments";
-
-const initialEvents: Event[] = [
-  {
-    id: "1",
-    title: "Consultation with John",
-    clientName: "John",
-    date: "2025-08-06",
-    time: "15:27",
-    location: "Clinic A",
-    address: "123 Street, City",
-    age: "35",
-    sex: "male",
-    type: "client-meeting",
-    signature: "",
-  },
-  {
-    id: "2",
-    title: "Consultation with Doe",
-    clientName: "Doe",
-    date: "2025-08-20",
-    time: "15:27",
-    location: "Clinic A",
-    address: "123 Street, City",
-    age: "28",
-    sex: "male",
-    type: "client-meeting",
-    signature: "",
-  },
-  {
-    id: "3",
-    title: "Follow-up with Jane",
-    clientName: "Jane",
-    date: "2025-08-06",
-    time: "15:27",
-    location: "Clinic A",
-    address: "123 Street, City",
-    age: "32",
-    sex: "female",
-    type: "client-meeting",
-    signature: "",
-  },
-];
+import { newAppointment, seeAllAppointments } from "@/hooks/appointments";
 
 const ClientAppointments = () => {
-  const [events, setEvents] = useState<Event[]>(initialEvents);
-  const [error, setError] = useState<Event[]>(initialEvents);
+  const [events, setEvents] = useState<Event[]>([]);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleAddEvent = (newEvent: Event) => {
-    setEvents((prev) => [...prev, newEvent]);
+  const handleAddEvent = async (newEvent: Event) => {
+    setEvents((prev) => (Array.isArray(prev) ? [...prev, newEvent] : [newEvent]));
+    try {
+      const response = await newAppointment(newEvent);
+    } catch (error) {
+      console.log("Error:- ",error);
+      
+    }
   };
 
   const handleUpdateEvent = (updatedEvent: Event) => {
@@ -71,8 +35,6 @@ const ClientAppointments = () => {
       const marketer = true;
       try {
         const response = await seeAllAppointments(doctor, marketer);
-
-        console.log(response);
 
         setEvents(response.data);
       } catch (error: any) {

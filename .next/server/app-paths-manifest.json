@@ -1,5 +1,0 @@
-{
-  "/(auth)/marketer/register/page": "app/(auth)/marketer/register/page.js",
-  "/doctor/messages/page": "app/doctor/messages/page.js",
-  "/marketer/appointments/page": "app/marketer/appointments/page.js"
-}

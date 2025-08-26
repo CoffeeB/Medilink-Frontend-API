@@ -52,7 +52,7 @@ const DoctorHeader = () => {
             {/* <Link className={`hover:text-primary ${isActive('/doctor/dashboard') ? 'text-primary' : ''}`} href="/doctor/dashboard">Home</Link> */}
             <Link className={`hover:text-primary ${isActive('/doctor/appointments') ? 'text-primary' : ''}`} href="/doctor/appointments">Appointments</Link>
             <Link className={`hover:text-primary ${isActive('/doctor/messaging') ? 'text-primary' : ''}`} href="/doctor/messages">Messaging</Link>
-            <Link className={`hover:text-primary ${isActive('/doctor/diagnosis') ? 'text-primary' : ''}`} href="/doctor/client">Client</Link>
+            <Link className={`hover:text-primary ${isActive('/doctor/client') ? 'text-primary' : ''}`} href="/doctor/client">Client</Link>
           </nav>
 
           {/* Right Side - Profile */}
@@ -102,7 +102,7 @@ const DoctorHeader = () => {
           <nav className="md:hidden bg-white border-t flex flex-col space-y-2 px-6 py-4">
             
             <Link onClick={() => setMobileOpen(false)} href="/doctor/appointments" className={`hover:text-primary ${isActive('/doctor/appointments') ? 'text-primary' : ''}`}>Appointments</Link>
-            <Link onClick={() => setMobileOpen(false)} href="/doctor/messaging" className={`hover:text-primary ${isActive('/doctor/messaging') ? 'text-primary' : ''}`}>Messaging</Link>
+            <Link onClick={() => setMobileOpen(false)} href="/doctor/messages" className={`hover:text-primary ${isActive('/doctor/messages') ? 'text-primary' : ''}`}>Messaging</Link>
 
             <Link onClick={() => setMobileOpen(false)} href="/doctor/client" className={`hover:text-primary ${isActive('/doctor/client') ? 'text-primary' : ''}`}>Client</Link>
           </nav>

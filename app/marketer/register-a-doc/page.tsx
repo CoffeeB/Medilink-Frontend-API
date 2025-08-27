@@ -347,7 +347,7 @@ export default function RegisterADoctor() {
                         </FormItem>
                       )}
                     />
-                     <FormField
+                     {/* <FormField
                       control={form.control}
                       name="password"
                       render={({ field }) => (
@@ -413,7 +413,7 @@ export default function RegisterADoctor() {
                           <FormMessage />
                         </FormItem>
                       )}
-                    />
+                    /> */}
                   </div>
 
                   {/* Address - Full Width */}

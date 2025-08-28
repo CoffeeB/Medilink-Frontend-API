@@ -1,7 +1,7 @@
 import Cookies from "js-cookie";
 import axiosInstance from "../lib/axios";
 
-export const requestAppointment = async (formId: any, date: any) => {
+export const newAppointment = async (formId: any, date: any) => {
   const token = Cookies.get("token");
   if (!token) {
     throw new Error("Token is required");

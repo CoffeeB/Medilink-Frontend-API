@@ -41,7 +41,7 @@ export default function MarketerLogin() {
       const { user } = await login(data);
 
       if (user.role === "marketer") {
-        router.push("/marketer/dashboard");
+        router.push("/marketer/appointments");
       } else {
         router.push("/admin/dashboard");
       }

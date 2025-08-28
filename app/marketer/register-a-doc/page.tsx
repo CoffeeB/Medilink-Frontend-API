@@ -27,40 +27,32 @@ const countryOptions = countries
   }))
   .sort((a, b) => a.label.localeCompare(b.label));
 
-const registerFormSchema = z
-  .object({
-    firstName: z.string().min(1, "First name is required"),
-    lastName: z.string().min(1, "Last name is required"),
-    middleName: z.string().optional(),
-    dateOfBirth: z.string().min(1, "Date of birth is required"),
-    phoneNumber: phoneSchema,
-    email: z.string().email("Invalid email address"),
-    // address: z.string().min(1, "Address is required"),
-    // streetAddress: z.string().min(1, "Street Address is required"),
-    // streetAddressLine2: z.string().optional(),
-    // city: z.string().min(1, "City is required"),
-    // region: z.string().min(1, "Region is required"),
-    // postalCode: z.string().min(1, "Postal/Zip code is required"),
-    // country: z.string().min(1, "Country is required"),
-    password: z.string().min(6, "Password must be at least 6 characters"),
-    confirmPassword: z.string().min(6, "Confirm password is required"),
-    certificate: z.any().optional(),
-    driversLicense: z.any().optional(),
-    ssn: z.any().optional(),
-    resume: z.any().optional(),
-    address: z.object({
-      street: z.string().min(1, "Street is required"),
-      streetLine2: z.string().optional(),
-      city: z.string().min(1, "City is required"),
-      region: z.string().min(1, "Region is required"),
-      postalCode: z.string().min(1, "Postal code is required"),
-      country: z.string().min(1, "Country is required"),
-    }),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    path: ["confirmPassword"], // error will show under confirmPassword
-    message: "Passwords do not match",
-  });
+
+const registerFormSchema = z.object({
+  firstName: z.string().min(1, "First name is required"),
+  lastName: z.string().min(1, "Last name is required"),
+  middleName: z.string().optional(),
+  dateOfBirth: z.string().min(1, "Date of birth is required"),
+  phoneNumber: phoneSchema,
+  email: z.string().email("Invalid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string().min(6, "Confirm password is required"),
+  certificate: z.any().optional(),
+  driversLicense: z.any().optional(),
+  ssn: z.any().optional(),
+  resume: z.any().optional(),
+  address: z.object({
+    street: z.string().min(1, "Street is required"),
+    streetLine2: z.string().optional(),
+    city: z.string().min(1, "City is required"),
+    region: z.string().min(1, "Region is required"),
+    postalCode: z.string().min(1, "Postal code is required"),
+    country: z.string().min(1, "Country is required"),
+  }),
+}).refine((data) => data.password === data.confirmPassword, {
+  path: ["confirmPassword"], // error will show under confirmPassword
+  message: "Passwords do not match",
+});
 
 type FormValues = z.infer<typeof registerFormSchema>;
 
@@ -77,16 +69,16 @@ export default function RegisterADoctor() {
       middleName: "",
       dateOfBirth: "",
       phoneNumber: "",
-      email: "",
+      email: "",   
       password: "",
       confirmPassword: "",
-      address: {
-        street: "",
-        streetLine2: "",
-        city: "",
-        region: "",
-        postalCode: "",
-        country: "",
+        address: {
+          street: "",
+          streetLine2: "",
+          city: "",
+          region: "",
+          postalCode: "",
+          country: "",
       },
     },
   });
@@ -341,52 +333,6 @@ export default function RegisterADoctor() {
                         </FormItem>
                       )}
                     />
-                    <FormField
-                      control={form.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-gray-700">
-                            <span className="font-medium">Password</span>
-                          </FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Input
-                                placeholder="Enter your password"
-                                type={showPassword ? "text" : "password"}
-                                autoComplete="current-password" // ✅ Better UX
-                                {...field}
-                              />
-                              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700">
-                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                              </button>
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="confirmPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-gray-700">
-                            <span className="font-medium">Confirm Password</span>
-                          </FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Input placeholder="Confirm your password" type={showPassword ? "text" : "password"} autoComplete="current-password" {...field} />
-                              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700">
-                                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                              </button>
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
                   </div>
 
                   {/* Address - Full Width */}
@@ -421,7 +367,7 @@ export default function RegisterADoctor() {
                     )}
                   />
 
-                  <div className="grid grid-cols-2 gap-6">
+                  <div className="grid grid-cols-2 gap-6">                    
                     <FormField
                       control={form.control}
                       name="address.city"
@@ -434,7 +380,7 @@ export default function RegisterADoctor() {
                         </FormItem>
                       )}
                     />
-
+                    
                     <FormField
                       control={form.control}
                       name="address.region"
@@ -496,8 +442,13 @@ export default function RegisterADoctor() {
 
                   {/* Submit Button */}
                   <div className="pt-6">
-                    <Button type="submit" variant="secondary" className="w-full py-3 text-lg font-semibold cursor-pointer" disabled={isSubmitting}>
-                      {isSubmitting ? "Submitting..." : "Submit"}
+                    <Button
+                      type="submit"
+                      variant="secondary"
+                      className="w-full py-3 text-lg font-semibold cursor-pointer"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? 'Submitting...' : 'Submit'}
                     </Button>
                   </div>
                 </form>

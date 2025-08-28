@@ -53,6 +53,7 @@ export default function DoctorCalendarView({ events }: DoctorCalendarViewProps) 
           if (ev) setSelectedEvent(ev)
         }}
         height="auto"
+        contentHeight="auto"
       />
       </div>
 

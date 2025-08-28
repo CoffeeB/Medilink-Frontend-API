@@ -13,7 +13,7 @@ import {
 import { Calendar, Dna, Phone, Eye, EyeOff } from 'lucide-react'
 import UpdateClientSignatureForm from "@/components/forms/UpdateClientSignatureForm"
 import ChangePinForm from "@/components/forms/ChangePinForm"
-
+import AvatarUpload from "@/components/AvatarUpload"
 import { useState } from "react"
 import Image from "next/image"
 import { Input } from "@/components/ui/input"
@@ -33,11 +33,6 @@ export default function DoctorProfile() {
     // Add API call to change PIN here
   };
 
-  // const handleParentPinChange = (oldPin: string, newPin: string) => {
-    // console.log('Changing parent PIN:', { oldPin, newPin });
-    // Add API call to change PIN here
-  // };
-
   return (
     <div className="container max-w-[1350px] mx-auto p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
@@ -50,9 +45,13 @@ export default function DoctorProfile() {
           </CardHeader>
           <CardContent className="space-y-3 sm:space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
-              <Button variant="ghost" className="relative h-16 w-16 sm:h-10 sm:w-10 p-10 rounded-full bg-secondary hover:bg-secondary text-white hover:text-white cursor-pointer self-center sm:self-auto">
-                WB
-              </Button>
+              <AvatarUpload 
+                onImageChange={(file, imageUrl) => {
+                  console.log('Avatar changed:', file, imageUrl);
+                  // Handle the uploaded image here
+                  // You might want to upload it to your server
+                }}
+              />
               <div className="flex flex-col text-center sm:text-left">
                 <h3 className="font-semibold text-secondary text-base sm:text-lg">
                   Werey Babatunde

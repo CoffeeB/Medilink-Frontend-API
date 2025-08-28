@@ -14,6 +14,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import AvatarUpload from './AvatarUpload';
 
 const MarketerHeader = () => {
   // const pathname = usePathname()
@@ -50,6 +51,7 @@ const MarketerHeader = () => {
           {/* Right Side - Profile */}
           <div className="flex items-center space-x-4">
             <DropdownMenu>
+              
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full bg-secondary hover:bg-secondary text-white hover:text-white cursor-pointer">
                   MI

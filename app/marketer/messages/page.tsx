@@ -1,5 +1,7 @@
 "use client";
 
+import axiosInstance from "@/lib/axios";
+import { usersList } from "@/hooks/messages";
 import React, { useState, useRef, useEffect } from "react";
 import { 
   Search, Phone, Video, Smile, Paperclip, Send, Check, CheckCheck, 
@@ -144,6 +146,8 @@ export default function ChatDashboard() {
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [recordedAudioURL, setRecordedAudioURL] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
+  const [users, setUsers] = useState([]);
+  const [listError, setListError] = useState("");
   const [messages, setMessages] = useState(initialMessages);
   const [isMobile, setIsMobile] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
@@ -395,6 +399,21 @@ export default function ChatDashboard() {
     }
   };
 
+  useEffect(() => {
+    const getUsersList = async () => {
+      try {
+        const response = await usersList();
+
+        console.log(response);
+      } catch (error) {
+        console.log("error getting users", error);
+        setListError("Couldn't fetch users. Please Try again");
+      }
+    };
+
+    getUsersList();
+  }, [isModalOpen]);
+  
   const sendVoiceNote = () => {
     if (recordedAudioURL) {
       const voiceMessage = {
@@ -523,6 +542,50 @@ export default function ChatDashboard() {
               onChange={(e) => setSearchQuery(e.target.value)} 
               className="w-full pl-10 pr-4 py-2 bg-gray-100 rounded-lg border-none focus:outline-none focus:ring-2 focus:ring-blue-500" 
             />
+          </div>
+          <div className="relative">
+            <button className="p-2 cursor-pointer" onClick={() => setIsModalOpen(!isModalOpen)}>
+              <SquarePen className="w-4 h-4" />
+            </button>
+            {isModalOpen && (
+              <div className="absolute right-0 mt-2 bg-white rounded-lg shadow-lg w-auto max-w-md max-h-[80vh] flex flex-col shadow-md rounded-md z-10">
+                {/* Modal box */}
+                {/* Header */}
+                <div className="flex justify-between items-center gap-3 p-4 border-b">
+                  <h2 className="text-lg text-nowrap font-semibold">All Users</h2>
+                  <button onClick={() => setIsModalOpen(false)} className="text-gray-500 hover:text-gray-700">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                {/* Scrollable content */}
+                <div className="p-4 overflow-y-auto">
+                  {listError ? (
+                    <>
+                      <div className="flex flex-col items-center justify-center text-black/70">
+                        <MessageSquareWarningIcon className="w-4 h-4" />
+                        <p className="text-center text-sm">{listError}</p>
+                      </div>
+                    </>
+                  ) : (
+                    <ul className="space-y-2">
+                      {users.map((user: any) => (
+                        <li key={user?.id} onClick={() => setSelectedContact(user)} className="p-2 rounded-md hover:bg-gray-100 cursor-pointer">
+                          {user?.name}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                {/* Footer (optional) */}
+                <div className="p-4 border-t text-right flex justify-center">
+                  <button onClick={() => setIsModalOpen(false)} className="px-4 py-2 bg-blue-500 text-white rounded-md hover:bg-blue-600 cursor-pointer">
+                    Close
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
           <div className="relative">
             <button className="p-2" onClick={() => setShowFilterDropdown(!showFilterDropdown)}>
@@ -714,6 +777,7 @@ export default function ChatDashboard() {
         {/* Message Input */}
         <div className="bg-gray-100 border-t border-gray-200 p-4">
           <div className="flex items-center space-x-3">
+            {/* Paperclip icon */}
             {/* Emoji Picker */}
             <div className="relative">
               <button

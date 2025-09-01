@@ -8,6 +8,8 @@ export type SignupResponse = {
 };
 
 export const signup = async (data: FormData): Promise<SignupResponse> => {
+  console.log(data);
+
   try {
     const response = await axiosInstance.post("/api/auth/signup", data, {
       headers: {

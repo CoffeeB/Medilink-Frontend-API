@@ -86,26 +86,12 @@ export default function RegisterADoctor() {
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
     try {
-      // Convert form values to FormData for file + text fields
-      const formData = new FormData();
-      Object.entries(data).forEach(([key, value]) => {
-        if (value) {
-          formData.append(key, value as any);
-        }
-      });
-
-      // Append uploaded files
-      if (uploadedFiles.certificate) formData.append("certificate", uploadedFiles.certificate);
-      if (uploadedFiles.driversLicense) formData.append("driversLicense", uploadedFiles.driversLicense);
-      if (uploadedFiles.ssn) formData.append("ssn", uploadedFiles.ssn);
-      if (uploadedFiles.resume) formData.append("resume", uploadedFiles.resume);
-
-      const response = await signup(formData);
-
+      const payload = { ...data, ...uploadedFiles };
+      const response = await signup(payload);
       console.log("Signup success:", response);
       router.push("/marketer/login");
     } catch (error: any) {
-      console.error("Registration error:", error.message);
+      console.log("Registration error:", error.message);
     } finally {
       setIsSubmitting(false);
     }
@@ -347,73 +333,6 @@ export default function RegisterADoctor() {
                         </FormItem>
                       )}
                     />
-                     {/* <FormField
-                      control={form.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-gray-700">
-                            <span className="font-medium">Password</span>
-                          </FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Input
-                                placeholder="Enter your password"
-                                type={showPassword ? "text" : "password"}
-                                autoComplete="current-password" // ✅ Better UX
-                                {...field}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700"
-                              >
-                                {showPassword ? (
-                                  <EyeOff className="h-4 w-4" />
-                                ) : (
-                                  <Eye className="h-4 w-4" />
-                                )}
-                              </button>
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="confirmPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-gray-700">
-                            <span className="font-medium">Confirm Password</span>
-                          </FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Input
-                                placeholder="Confirm your password"
-                                type={showPassword ? "text" : "password"}
-                                autoComplete="current-password" 
-                                {...field}
-                              />
-                              <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-3 top-2.5 text-gray-500 hover:text-gray-700"
-                              >
-                                {showPassword ? (
-                                  <EyeOff className="h-4 w-4" />
-                                ) : (
-                                  <Eye className="h-4 w-4" />
-                                )}
-                              </button>
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    /> */}
                   </div>
 
                   {/* Address - Full Width */}

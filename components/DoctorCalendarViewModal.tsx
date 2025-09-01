@@ -59,28 +59,28 @@ export default function DoctorCalendarView({ events }: DoctorCalendarViewProps) 
 
       {/* Modal for details */}
       <Dialog open={!!selectedEvent} onOpenChange={() => setSelectedEvent(null)}>
-  <DialogContent className="max-w-md">
-    {selectedEvent && (
-      <>
-        <DialogHeader>
-          <DialogTitle>{selectedEvent.clientName}</DialogTitle>
-          <DialogDescription>
-            Appointment details
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-2">
-          <p><strong>Date:</strong> {selectedEvent.date}</p>
-          <p><strong>Time:</strong> {selectedEvent.time}</p>
-          <p><strong>Address:</strong> {selectedEvent.address}</p>
-          {selectedEvent.sex && (
-            <p><strong>Sex:</strong> {selectedEvent.sex}</p>
+        <DialogContent className="max-w-md">
+          {selectedEvent && (
+            <>
+              <DialogHeader>
+                <DialogTitle>{selectedEvent.clientName}</DialogTitle>
+                <DialogDescription>
+                  Appointment details
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-2">
+                <p><strong>Date:</strong> {selectedEvent.date}</p>
+                <p><strong>Time:</strong> {selectedEvent.time}</p>
+                <p><strong>Address:</strong> {selectedEvent.address}</p>
+                {selectedEvent.sex && (
+                  <p><strong>Sex:</strong> {selectedEvent.sex}</p>
+                )}
+                <Button className="cursor-pointer">Confirm</Button>
+              </div>
+            </>
           )}
-          <Button className="cursor-pointer">Confirm</Button>
-        </div>
-      </>
-    )}
-  </DialogContent>
-</Dialog>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

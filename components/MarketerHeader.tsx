@@ -33,9 +33,9 @@ const MarketerHeader = () => {
           {/* Logo */}
           <div className="flex items-center space-x-4">
             <Image
-              src="/images/logo.png"
-              alt="Next.js logo"
-              width={150}
+              src="/images/logo.svg"
+              alt="Excel connect logo"
+              width={250}
               height={32}
               priority
             />

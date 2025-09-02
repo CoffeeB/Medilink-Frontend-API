@@ -521,7 +521,7 @@ export default function ChatDashboard() {
               placeholder="Search or start new chat" 
               value={searchQuery} 
               onChange={(e) => setSearchQuery(e.target.value)} 
-              className="w-full pl-10 pr-4 py-2 bg-gray-100 rounded-lg border-none focus:outline-none focus:ring-2 focus:ring-blue-500" 
+              className="w-full pl-10 pr-4 py-2 bg-gray-100 rounded-lg border-none focus:outline-none focus:ring-2 focus:ring-green-300" 
             />
           </div>
           <div className="relative">
@@ -573,7 +573,7 @@ export default function ChatDashboard() {
                   <div className="flex justify-between items-center mt-1">
                     <p className="text-sm text-gray-500 truncate">{contact.lastMessage}</p>
                     {contact.unread > 0 && (
-                      <span className="ml-2 bg-blue-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center whitespace-nowrap">
+                      <span className="ml-2 bg-secondary text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center whitespace-nowrap">
                         {contact.unread > 99 ? "99+" : contact.unread}
                       </span>
                     )}
@@ -641,7 +641,7 @@ export default function ChatDashboard() {
                 placeholder="Search messages..."
                 value={chatSearchQuery}
                 onChange={(e) => setChatSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-10 py-2 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-10 py-2 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-green-300"
               />
               <button
                 onClick={() => {
@@ -671,7 +671,7 @@ export default function ChatDashboard() {
                 </div>
               ) : (
                 <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                  message.sent ? "bg-blue-500 text-white" : "bg-white text-gray-900 shadow-sm"
+                  message.sent ? "bg-secondary text-white" : "bg-white text-gray-900 shadow-sm"
                 }`}>
                   {message.type === "image" && message.imageUrl && (
                     <img src={message.imageUrl} alt="Shared image" className="w-full h-48 object-cover rounded mb-2" />
@@ -786,7 +786,7 @@ export default function ChatDashboard() {
                     placeholder="Type a message"
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
-                    className="w-full pl-12 pr-12 py-2 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full pl-12 pr-12 py-2 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--secondary))]"
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && messageInput.trim() && !sending) {
                         e.preventDefault();
@@ -798,7 +798,7 @@ export default function ChatDashboard() {
                   <button
                     onClick={handleSend}
                     disabled={!messageInput.trim() || sending}
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 bg-blue-500 text-white rounded-full hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 bg-secondary text-white rounded-full hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Send className="w-5 h-5" />
                   </button>

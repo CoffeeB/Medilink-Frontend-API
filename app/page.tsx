@@ -9,13 +9,12 @@ export default function Home() {
         <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
         <Image
           src="/images/logo.png"
-          alt="Next.js logo"
+          alt="Excel Connect logo"
           width={180}
           height={38}
           priority
         />
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          
+        <div className="flex gap-4 items-center flex-col sm:flex-row">          
             <Button asChild>
               <Link href="/marketer/login">
                 Marketer Login <ArrowRight />

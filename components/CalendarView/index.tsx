@@ -176,7 +176,6 @@ const CalendarView = ({ events, onAddEvent, onUpdateEvent, onDeleteEvent }: Prop
                 value={form.sex} 
                 onValueChange={(val) => setForm({ ...form, sex: val as 'male' | 'female' })}
               >
-                {/* <SelectTrigger><SelectValue /></SelectTrigger> */}
                 <SelectTrigger>
                   <SelectValue placeholder="Select sex" />
                 </SelectTrigger>
@@ -257,7 +256,7 @@ const CalendarView = ({ events, onAddEvent, onUpdateEvent, onDeleteEvent }: Prop
               </div>
             </div>
 
-            <Button type="submit" className="w-full">
+            <Button type="submit" className="w-full bg-secondary cursor-pointer">
               {form.id ? "Update Appointment" : "Add Appointment"}
             </Button>
           </form>

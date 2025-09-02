@@ -17,18 +17,13 @@ const DoctorLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <SocketContextProvider>
       <>
-      {/* <div className="min-h-screen bg-gray-50">
-        <DoctorHeader />
-        {children}
-      </div> */}
-      <div className="min-h-screen bg-gray-50">
-        <MarketerHeader />
-      <main className="container max-w-[1350px] mx-auto p-6 space-y-6">
-        
-          {children}
-        </main>
-      </div>
-      <Footer />
+        <div className="min-h-screen bg-gray-50">
+          <MarketerHeader />
+          <main className="container max-w-[1350px] mx-auto p-6 space-y-6">      
+            {children}
+          </main>
+        </div>
+        <Footer />
       </>
     </SocketContextProvider>
   );

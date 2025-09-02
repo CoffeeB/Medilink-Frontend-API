@@ -84,9 +84,7 @@ export default function DoctorProfile() {
                   <p className="text-xs sm:text-sm text-muted-foreground">Sex:</p>
                   <p className="font-medium text-sm sm:text-base">Male</p>
                 </div>
-              </div>
-
-              
+              </div>              
             </div>
           </CardContent>
         </Card>
@@ -127,7 +125,7 @@ export default function DoctorProfile() {
                 </div>
                 <Dialog open={openClientSignature} onOpenChange={setOpenClientSignature}>
                   <DialogTrigger asChild>
-                    <Button variant="secondary" className="w-full text-sm sm:text-base">
+                    <Button variant="secondary" className="w-full text-sm sm:text-base cursor-pointer">
                       Update Signature
                     </Button>
                   </DialogTrigger>
@@ -140,7 +138,7 @@ export default function DoctorProfile() {
                 </Dialog>
                 <Button
                   variant="outline"
-                  className="w-full text-sm sm:text-base"
+                  className="w-full text-sm sm:text-base cursor-pointer"
                   onClick={() => setOpenClientPin(true)}
                 >
                   Change PIN?
@@ -166,7 +164,7 @@ export default function DoctorProfile() {
                       placeholder="Enter your password"
                       type={showPassword ? "text" : "password"}
                       autoComplete="current-password"
-                      className="pr-10 text-sm sm:text-base" // Add padding-right to make space for the icon
+                      className="pr-10 text-sm sm:text-base"
                     />
                     <button
                       type="button"
@@ -190,7 +188,7 @@ export default function DoctorProfile() {
                       placeholder="Confirm new password"
                       type={showConfirmPassword ? "text" : "password"}
                       autoComplete="new-password"
-                      className="pr-10 text-sm sm:text-base" // Add padding-right to make space for the icon
+                      className="pr-10 text-sm sm:text-base"
                     />
                     <button
                       type="button"
@@ -206,7 +204,7 @@ export default function DoctorProfile() {
                   </div>
                 </div>
                               
-                <Button variant="secondary" className="w-full text-sm sm:text-base">
+                <Button variant="secondary" className="w-full text-sm sm:text-base cursor-pointer">
                   Reset Password
                 </Button>
               </div>

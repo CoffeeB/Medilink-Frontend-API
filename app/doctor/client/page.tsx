@@ -124,7 +124,6 @@ export default function ClientDiagnosis() {
                   onChange={(e) => setSearchTerm(e.target.value)}
                 />
               </div>
-              {/* <DatePickerWithRange className='md:w-7xl'/> */}
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs sm:text-sm text-muted-foreground">
@@ -244,7 +243,7 @@ export default function ClientDiagnosis() {
                     </div>
 
                     <div className="pt-2">
-                      <Button onClick={handleConfirm} className="w-full text-sm sm:text-base">Confirm</Button>
+                      <Button onClick={handleConfirm} className="w-full text-sm sm:text-base bg-secondary cursor-pointer">Confirm</Button>
                     </div>
                   </>
                 )}

@@ -36,9 +36,6 @@ export default function DoctorDashboard() {
           </CardHeader>
           <CardContent className="space-y-3 sm:space-y-4">
             <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
-              {/* <Button variant="ghost" className="relative h-16 w-16 sm:h-10 sm:w-10 p-10 rounded-full bg-secondary hover:bg-secondary text-white hover:text-white cursor-pointer self-center sm:self-auto">
-                WB
-              </Button> */}
               <AvatarUpload 
                 onImageChange={(file, imageUrl) => {
                   console.log('Avatar changed:', file, imageUrl);
@@ -119,7 +116,7 @@ export default function DoctorDashboard() {
                 </div>
                 <Dialog open={openClientSignature} onOpenChange={setOpenClientSignature}>
                   <DialogTrigger asChild>
-                    <Button variant="secondary" className="w-full text-sm sm:text-base">
+                    <Button variant="secondary" className="w-full text-sm sm:text-base cursor-pointer">
                       Update Signature
                     </Button>
                   </DialogTrigger>
@@ -132,7 +129,7 @@ export default function DoctorDashboard() {
                 </Dialog>
                 <Button
                   variant="outline"
-                  className="w-full text-sm sm:text-base"
+                  className="w-full text-sm sm:text-base cursor-pointer"
                   onClick={() => setOpenClientPin(true)}
                 >
                   Change PIN?
@@ -158,7 +155,7 @@ export default function DoctorDashboard() {
                       placeholder="Enter your password"
                       type={showPassword ? "text" : "password"}
                       autoComplete="current-password"
-                      className="pr-10 text-sm sm:text-base" // Add padding-right to make space for the icon
+                      className="pr-10 text-sm sm:text-base"
                     />
                     <button
                       type="button"
@@ -182,7 +179,7 @@ export default function DoctorDashboard() {
                       placeholder="Confirm new password"
                       type={showConfirmPassword ? "text" : "password"}
                       autoComplete="new-password"
-                      className="pr-10 text-sm sm:text-base" // Add padding-right to make space for the icon
+                      className="pr-10 text-sm sm:text-base" 
                     />
                     <button
                       type="button"
@@ -198,7 +195,7 @@ export default function DoctorDashboard() {
                   </div>
                 </div>
                               
-                <Button variant="secondary" className="w-full text-sm sm:text-base">
+                <Button variant="secondary" className="w-full text-sm sm:text-base cursor-pointer">
                   Reset Password
                 </Button>
               </div>

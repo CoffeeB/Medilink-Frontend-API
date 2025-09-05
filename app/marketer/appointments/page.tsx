@@ -6,18 +6,18 @@ import { Event } from "@/types/calendar";
 import { EventList } from "@/components/EventList";
 import CalendarView from "@/components/CalendarView";
 import { newAppointment, seeAllAppointments } from "@/hooks/appointments";
+import { newForm } from "@/hooks/form";
 
 const ClientAppointments = () => {
   const [events, setEvents] = useState<Event[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const handleAddEvent = async (newEvent: Event) => {
-    setEvents((prev) => (Array.isArray(prev) ? [...prev, newEvent] : [newEvent]));
     try {
-      const response = await newAppointment(newEvent);
+      const response = await newForm(newEvent);
+      setEvents((prev) => (Array.isArray(prev) ? [...prev, newEvent] : [newEvent]));
     } catch (error) {
-      console.log("Error:- ",error);
-      
+      console.log("Error:- ", error);
     }
   };
 

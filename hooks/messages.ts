@@ -1,7 +1,20 @@
 import Cookies from "js-cookie";
 import axiosInstance from "../lib/axios";
 
-export const messages = async () => {
+export const messageContacts = async () => {
+  const token = Cookies.get("token");
+  if (!token) {
+    throw new Error("Token is required");
+  }
+  const response = await axiosInstance.get("/api/auth/messaging", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};
+
+export const activeMessages = async () => {
   const token = Cookies.get("token");
   if (!token) {
     throw new Error("Token is required");
@@ -14,19 +27,23 @@ export const messages = async () => {
   return response.data;
 };
 
-export const message = async (conversationId: string | null) => {
-  if (!conversationId) {
+export const contactMessage = async (recipientId: any) => {
+  if (!recipientId) {
     throw new Error("Conversation ID is required");
   }
   const token = Cookies.get("token");
   if (!token) {
     throw new Error("Token is required");
   }
-  const response = await axiosInstance.get(`/api/message/${conversationId}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
+  const response = await axiosInstance.post(
+    `/api/conversations`,
+    { recipientId },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
   return response.data;
 };
 
@@ -40,5 +57,28 @@ export const usersList = async () => {
       Authorization: `Bearer ${token}`,
     },
   });
+  return response.data;
+};
+
+export const sendMessage = async (conversationId: string, receiverId: string, text: string) => {
+  const token = Cookies.get("token");
+  if (!token) {
+    throw new Error("Token is required");
+  }
+
+  const response = await axiosInstance.post(
+    "/api/conversations",
+    {
+      conversationId,
+      receiverId,
+      text,
+    },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
   return response.data;
 };

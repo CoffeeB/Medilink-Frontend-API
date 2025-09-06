@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { DoctorEventList } from "@/components/DoctorEventList";
-import DoctorCalendarView from "@/components/DoctorCalendarViewModal";
+import DoctorCalendarView from "@/components/DoctorCalendarView";
 import { Event } from "@/types/calendar";
 import { seeAllAppointments } from "@/hooks/appointments";
 

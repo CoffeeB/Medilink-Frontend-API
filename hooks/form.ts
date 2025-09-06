@@ -28,3 +28,20 @@ export const seeAllPendingForms = async () => {
 
   return response?.data;
 };
+
+export const seeFormDetails = async (link: string) => {
+  const token = Cookies.get("token");
+  if (!token) {
+    throw new Error("Token is required");
+  }
+
+  let response;
+
+  response = await axiosInstance.get(`/api${link}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return response?.data;
+};

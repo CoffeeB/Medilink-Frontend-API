@@ -10,20 +10,31 @@ import { Menu, X } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import Cookies from "js-cookie";
 import { Bell } from "lucide-react";
-import { seeAllPendingForms } from "@/hooks/form";
+import { seeAllPendingForms, seeFormDetails } from "@/hooks/form";
 import { seeAllNotifications } from "@/hooks/notifications";
+import DoctorCalendarView from "./DoctorCalendarView";
+import DoctorCalendarViewModal from "./DoctorCalendarViewModal";
 
 const DoctorHeader = () => {
   // const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [selectedEvent, setSelectedEvent] = useState([]);
 
   const [selectedNotification, setSelectedNotification] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const handleItemClick = (notification: any) => {
+  const handleItemClick = async (notification: any) => {
+    if(notification.link) {
+      try {
+        const response = await seeFormDetails(notification.link);
+        setSelectedEvent(response);
+        setIsModalOpen(true);
+      } catch (error) {
+        console.log(error);
+      }
+    }
     setSelectedNotification(notification);
-    setIsModalOpen(true);
   };
 
   const isActive = (path: string) => {
@@ -91,11 +102,11 @@ const DoctorHeader = () => {
                 </Button>
               </DropdownMenuTrigger>
 
-              <DropdownMenuContent className="w-56 bg-white shadow-md rounded" align="end" forceMount>
+              <DropdownMenuContent className="h-70 overflow-y-auto bg-white shadow-md rounded" align="end" forceMount>
                 {notifications?.length > 0 ? (
                   notifications?.map((n, idx) => (
-                    <DropdownMenuItem key={idx} className="cursor-pointer" onClick={() => handleItemClick(n)}>
-                      1 {n?.title}
+                    <DropdownMenuItem key={idx} className="cursor-pointer hover:bg-black/5 rounded-md border-b border-black/10" onClick={() => handleItemClick(n)}>
+                      {n?.message}
                     </DropdownMenuItem>
                   ))
                 ) : (
@@ -142,6 +153,12 @@ const DoctorHeader = () => {
               Client
             </Link>
           </nav>
+        )}
+
+        {selectedEvent && (
+          <>
+            <DoctorCalendarViewModal selectedEvent={selectedEvent} setSelectedEvent={setSelectedEvent} />
+          </>
         )}
       </div>
     </header>

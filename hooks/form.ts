@@ -36,8 +36,10 @@ export const seeFormDetails = async (link: string) => {
   }
 
   let response;
+  const formId = link.split("/").pop();
+  console.log(formId);
 
-  response = await axiosInstance.get(`/api${link}`, {
+  response = await axiosInstance.get(`/api/forms/${formId}`, {
     headers: {
       Authorization: `Bearer ${token}`,
     },

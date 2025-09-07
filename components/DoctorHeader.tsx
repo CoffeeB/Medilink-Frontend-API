@@ -25,7 +25,7 @@ const DoctorHeader = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleItemClick = async (notification: any) => {
-    if(notification.link) {
+    if (notification.link) {
       try {
         const response = await seeFormDetails(notification.link);
         setSelectedEvent(response);

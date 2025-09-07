@@ -38,13 +38,13 @@ export default function DoctorCalendarViewModal({ selectedEvent, setSelectedEven
               </DialogHeader>
               <div className="space-y-2">
                 <p>
-                  <strong>Date:</strong> {selectedEvent?.date}
+                  <strong>Date:</strong> {selectedEvent?.preferredDate}
                 </p>
                 <p>
-                  <strong>Time:</strong> {selectedEvent?.time}
+                  <strong>Time:</strong> {selectedEvent?.preferredTime}
                 </p>
                 <p>
-                  <strong>Description:</strong> {selectedEvent?.address}
+                  <strong>Description:</strong> {selectedEvent?.description}
                 </p>
                 {/* {selectedEvent?.sex && (
                   <p>

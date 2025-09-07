@@ -47,6 +47,7 @@ export default function ChatDashboard() {
   const [isMobile, setIsMobile] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [conversationId, setConversationId] = useState("");
 
   // Call states
   const [callState, setCallState] = useState("idle"); // idle, audio-calling, audio-connected, video-calling, video-connected
@@ -105,8 +106,8 @@ export default function ChatDashboard() {
     });
 
     try {
-      const response = await contactMessage(selectedContact?._id || contact?._id);
-      setMessages(response);
+      const response = await contactMessage("68bb2e153f62796e5340f6a6");
+      setConversationId(response?._id);
       console.log("response- ", response);
     } catch (error) {
       console.log(error);
@@ -253,7 +254,7 @@ export default function ChatDashboard() {
     };
 
     try {
-      const response = await sendMessage(id, selectedContact?._id, text);
+      const response = await sendMessage(conversationId, text);
       setMessages((prev) => [...prev, newMessage]);
       setMessageInput("");
     } catch (error: any) {

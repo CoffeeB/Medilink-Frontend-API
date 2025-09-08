@@ -96,7 +96,7 @@ export default function ChatDashboard() {
 
     // Add to contacts if it doesn’t exist already
     setContacts((prev) => {
-      const exists = prev.some((c) => (c.id && c.id === contact.id) || (c._id && c._id === contact._id));
+      const exists = prev.some((c) => (c?.id && c?.id === contact.id) || (c?._id && c?._id === contact._id));
 
       if (exists) {
         return prev; // don’t replace, just keep as is
@@ -106,7 +106,7 @@ export default function ChatDashboard() {
     });
 
     try {
-      const response = await contactMessage("68bb2e153f62796e5340f6a6");
+      const response = await contactMessage(selectedContact?._id || contact?._id);
       setConversationId(response?._id);
       console.log("response- ", response);
     } catch (error) {
@@ -254,7 +254,7 @@ export default function ChatDashboard() {
     };
 
     try {
-      const response = await sendMessage(conversationId, text);
+      const response = await sendMessage(conversationId, selectedContact?._id, text);
       setMessages((prev) => [...prev, newMessage]);
       setMessageInput("");
     } catch (error: any) {

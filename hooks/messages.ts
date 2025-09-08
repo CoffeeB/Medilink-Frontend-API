@@ -60,7 +60,7 @@ export const usersList = async () => {
   return response.data;
 };
 
-export const sendMessage = async (conversationId: string, text: string) => {
+export const sendMessage = async (conversationId: string, recipientId: string, text: string) => {
   const token = Cookies.get("token");
   if (!token) {
     throw new Error("Token is required");
@@ -70,6 +70,7 @@ export const sendMessage = async (conversationId: string, text: string) => {
     "/api/conversations",
     {
       conversationId,
+      recipientId,
       text,
     },
     {

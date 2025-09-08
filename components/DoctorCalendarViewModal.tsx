@@ -8,6 +8,7 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import "@/components/DoctorCalendarView/styles.css";
 import { Button } from "./ui/button";
+import { confirmAppointment } from "@/hooks/appointments";
 
 // interface EventData {
 //   id: string;
@@ -25,6 +26,15 @@ import { Button } from "./ui/button";
 // }
 
 export default function DoctorCalendarViewModal({ selectedEvent, setSelectedEvent }: any) {
+  const handleConfirmAppointment = async () => {
+    try {
+      const response = await confirmAppointment(selectedEvent?._id);
+      setSelectedEvent(null);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   return (
     <>
       {/* Modal for details */}
@@ -51,7 +61,11 @@ export default function DoctorCalendarViewModal({ selectedEvent, setSelectedEven
                     <strong>Sex:</strong> {selectedEvent?.sex}
                   </p>
                 )} */}
-                <Button className="cursor-pointer">Confirm</Button>
+                {selectedEvent.status != "accepted" && (
+                  <Button onClick={handleConfirmAppointment} className="cursor-pointer">
+                    Confirm
+                  </Button>
+                )}
               </div>
             </>
           )}

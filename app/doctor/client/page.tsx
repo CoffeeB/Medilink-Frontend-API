@@ -12,6 +12,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import SignatureCanvas from "react-signature-canvas";
+import { newForm } from "@/hooks/form";
 
 type ClientStatus = "Submitted" | "Pending" | "Review";
 
@@ -85,6 +86,7 @@ export default function ClientDiagnosis() {
   const sigRef = useRef<SignatureCanvas | null>(null);
 
   const handleRowClick = (d: Diagnosis) => {
+    setFormMode("view");
     setSelected(d);
     setAssessment("");
     setStatusSel(d.status);
@@ -124,9 +126,15 @@ export default function ClientDiagnosis() {
     setTimeout(() => sigRef.current?.clear(), 0);
   }
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>): void {
-    throw new Error("Function not implemented.");
-  }
+  const handleSubmit = async () => {
+    try {
+      const response = await newForm(form);
+      console.log(form);
+      // setEvents((prev) => (Array.isArray(prev) ? [...prev, newEvent] : [newEvent]));
+    } catch (error) {
+      console.log("Error:- ", error);
+    }
+  };
 
   return (
     <div className="container max-w-[1350px] mx-auto p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">

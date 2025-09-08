@@ -18,8 +18,8 @@ import DoctorCalendarViewModal from "./DoctorCalendarViewModal";
 const DoctorHeader = () => {
   // const pathname = usePathname()
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [selectedEvent, setSelectedEvent] = useState([]);
+  const [notifications, setNotifications] = useState(null);
+  const [selectedEvent, setSelectedEvent] = useState(null);
 
   const [selectedNotification, setSelectedNotification] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);

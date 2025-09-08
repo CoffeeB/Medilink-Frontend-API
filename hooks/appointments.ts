@@ -38,3 +38,37 @@ export const seeAllAppointments = async (doctor: boolean, marketer: boolean) => 
   }
   return response?.data;
 };
+
+export const confirmAppointment = async (formId: string) => {
+  const token = Cookies.get("token");
+  if (!token) {
+    throw new Error("Token is required");
+  }
+
+  let response;
+  response = await axiosInstance.post(`/api/forms/${formId}/accept`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  console.log("response", response);
+  return response?.data;
+};
+
+export const createAppointment = async (date: any, time: any, description: any) => {
+  const token = Cookies.get("token");
+  if (!token) {
+    throw new Error("Token is required");
+  }
+
+  let response;
+  response = await axiosInstance.post(`/api/appointments/doctor`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  console.log("response", response);
+  return response?.data;
+};

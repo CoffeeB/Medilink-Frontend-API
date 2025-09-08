@@ -8,8 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 interface Contact {
-  id: number;
-  name: string;
+  email: string;
+  firstname: string;
+  lastname: string;
+  id?: number;
+  name?: string;
+  role?: string;
+  _id?: string;
   lastMessage?: string;
   timestamp?: string;
   unread?: number;
@@ -28,9 +33,7 @@ interface ContactModalProps {
 export default function ContactModal({ open, onClose, contacts, onSelectContact }: ContactModalProps) {
   const [search, setSearch] = useState("");
 
-  const filteredContacts = contacts.filter((contact) =>
-    contact.name.toLowerCase().includes(search.toLowerCase())
-  );
+  const filteredContacts = contacts?.filter((contact) => contact?.firstname?.toLowerCase().includes(search.toLowerCase()) || contact?.lastname?.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -45,37 +48,34 @@ export default function ContactModal({ open, onClose, contacts, onSelectContact 
         {/* Search Bar */}
         <div className="flex items-center gap-2 px-4 py-2 border-b">
           <Search className="w-4 h-4 text-gray-500" />
-          <Input
-            placeholder="Search contacts..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="border-none focus:ring-0 shadow-none"
-          />
+          <Input placeholder="Search contacts..." value={search} onChange={(e) => setSearch(e.target.value)} className="border-none focus:ring-0 shadow-none" />
         </div>
 
         {/* Contact List */}
         <div className="max-h-80 overflow-y-auto">
-          {filteredContacts.length > 0 ? (
+          {filteredContacts?.length > 0 ? (
             filteredContacts.map((contact) => (
               <div
-                key={contact.id}
+                key={contact?._id}
                 className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 cursor-pointer"
                 onClick={() => {
                   onSelectContact(contact); // Trigger handler
                   onClose(); // Close modal after selecting
-                }}
-              >
+                }}>
                 <Avatar>
                   <AvatarImage src={contact.avatar} alt={contact.name} />
-                  <AvatarFallback>{contact.name.charAt(0)}</AvatarFallback>
+                  <AvatarFallback>
+                    {contact?.firstname?.charAt(0)}
+                    {contact?.lastname?.charAt(0)}
+                  </AvatarFallback>
                 </Avatar>
                 <div className="flex-1">
-                  <p className="font-medium text-gray-900">{contact.name}</p>
-                  <p className="text-sm text-gray-500 truncate">{contact.lastMessage}</p>
+                  <p className="font-medium text-gray-900">
+                    {contact?.firstname} {contact?.lastname}
+                  </p>
+                  <p className="text-sm text-gray-500 truncate">{contact?.email}</p>
                 </div>
-                {contact.online && (
-                  <span className="w-3 h-3 bg-green-500 rounded-full" />
-                )}
+                {/* {contact.online && <span className="w-3 h-3 bg-green-500 rounded-full" />} */}
               </div>
             ))
           ) : (

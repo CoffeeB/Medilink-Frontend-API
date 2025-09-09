@@ -57,7 +57,7 @@ export default function ClientDiagnosis() {
       time: "10:00 AM",
       address: "123 Main St, City, Country",
       assessment: "Initial consultation and assessment completed.",
-      // signature: 'data:image/png;base64,...',
+      // signature: "data:image/png;base64,...",
       status: "Submitted",
     },
     {

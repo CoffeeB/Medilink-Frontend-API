@@ -24,6 +24,7 @@ export const activeMessages = async () => {
       Authorization: `Bearer ${token}`,
     },
   });
+
   return response.data;
 };
 
@@ -47,6 +48,18 @@ export const contactMessage = async (recipientId: any) => {
   return response.data;
 };
 
+export const contactMessageHistory = async (conversationId: any) => {
+  if (!conversationId) {
+    throw new Error("Conversation ID is required");
+  }
+  const token = Cookies.get("token");
+  if (!token) {
+    throw new Error("Token is required");
+  }
+  const response = await axiosInstance.get(`/api/messages/${conversationId}`);
+  return response.data;
+};
+
 export const usersList = async () => {
   const token = Cookies.get("token");
   if (!token) {
@@ -60,17 +73,16 @@ export const usersList = async () => {
   return response.data;
 };
 
-export const sendMessage = async (conversationId: string, recipientId: string, text: string) => {
+export const sendMessage = async (conversationId: string, text: string) => {
   const token = Cookies.get("token");
   if (!token) {
     throw new Error("Token is required");
   }
 
   const response = await axiosInstance.post(
-    "/api/conversations",
+    "/api/messages",
     {
       conversationId,
-      recipientId,
       text,
     },
     {

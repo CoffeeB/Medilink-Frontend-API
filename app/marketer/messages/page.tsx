@@ -1,10 +1,12 @@
 "use client";
 
 import axiosInstance from "@/lib/axios";
-import { activeMessages, contactMessage, messageContacts, sendMessage, usersList } from "@/hooks/messages";
+import { activeMessages, contactMessage, contactMessageHistory, messageContacts, sendMessage, usersList } from "@/hooks/messages";
 import React, { useState, useRef, useEffect } from "react";
 import { Search, Phone, Video, Smile, Paperclip, Send, Check, CheckCheck, PhoneMissed, ListFilter, Camera, Mic, MessageSquareDot, Pen, Users, FileText, ImagePlay, Plus, PhoneCall, PhoneOff, VideoOff, MicOff, X, ArrowLeft, MoreVertical, Download, Play, Pause, SquarePen, MessageSquareWarningIcon } from "lucide-react";
 import ContactModal from "@/components/ContactModal";
+import Peer, { MediaConnection } from "peerjs";
+import Cookies from "js-cookie";
 
 interface Contact {
   email: string;
@@ -41,7 +43,7 @@ export default function ChatDashboard() {
   const [mediaRecorder, setMediaRecorder] = useState<MediaRecorder | null>(null);
   const [recordedAudioURL, setRecordedAudioURL] = useState<string | null>(null);
   const [sending, setSending] = useState(false);
-  const [users, setUsers] = useState([]);
+  const [loggedInUser, setLoggedInUser] = useState<any>(null);
   const [listError, setListError] = useState("");
   const [messages, setMessages] = useState([]);
   const [isMobile, setIsMobile] = useState(false);
@@ -54,6 +56,9 @@ export default function ChatDashboard() {
   const [callDuration, setCallDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
+  const [peer, setPeer] = useState<Peer | null>(null);
+  const [remotePeerId, setRemotePeerId] = useState<string | null>(null);
+  const connRef = useRef<MediaConnection | null>(null);
 
   // Refs
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -90,6 +95,44 @@ export default function ChatDashboard() {
     fetchContacts();
   }, []);
 
+  // PeerJs Initialization
+  useEffect(() => {
+    const newPeer = new Peer();
+
+    newPeer.on("open", (id) => {
+      console.log("My peer ID is:", id);
+      // TODO: send this ID to your backend so other users can call you
+    });
+
+    newPeer.on("call", (call) => {
+      // Incoming call
+      navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((stream) => {
+        call.answer(stream); // Answer with our stream
+        localStreamRef.current = stream;
+
+        if (localVideoRef.current) {
+          localVideoRef.current.srcObject = stream;
+        }
+
+        call.on("stream", (remoteStream) => {
+          if (remoteVideoRef.current) {
+            remoteVideoRef.current.srcObject = remoteStream;
+          }
+        });
+
+        connRef.current = call;
+        setCallState("video-connected");
+        startCallTimer();
+      });
+    });
+
+    setPeer(newPeer);
+
+    return () => {
+      newPeer.destroy();
+    };
+  }, []);
+
   const handleSelectContact = async (contact: Contact) => {
     // Set the active/open chat
     setSelectedContact(contact);
@@ -108,7 +151,8 @@ export default function ChatDashboard() {
     try {
       const response = await contactMessage(selectedContact?._id || contact?._id);
       setConversationId(response?._id);
-      console.log("response- ", response);
+      const messageHistory = await contactMessageHistory(response?._id);
+      setMessages(messageHistory);
     } catch (error) {
       console.log(error);
     }
@@ -131,8 +175,38 @@ export default function ChatDashboard() {
     };
   }, []);
 
-  const filteredContacts = contacts?.filter((contact) => contact?.firstname?.toLowerCase().includes(searchQuery.toLowerCase()) || contact?.lastname?.toLowerCase().includes(searchQuery.toLowerCase()));
+  // get user from cookies
+  useEffect(() => {
+    if (!loggedInUser) {
+      const user = Cookies.get("user");
+      if (user) {
+        try {
+          const parsedUser = JSON.parse(user);
+          setLoggedInUser(parsedUser);
+        } catch (err) {
+          console.error("Failed to parse user cookie", err);
+        }
+      }
+    }
+  }, [loggedInUser]);
 
+  const transformedContacts = contacts?.map((contact) => {
+    const otherParticipant = contact?.participants?.find((p) => {
+      console.log("loggedInUser- ", loggedInUser?._id);
+      console.log("participant- ", p._id);
+      return p._id !== loggedInUser?.id;
+    });
+
+    return {
+      _id: contact?._id,
+      lastMessage: contact?.lastMessage,
+      timestamp: contact?.updatedAt,
+      unread: contact?.unread || 0,
+      ...otherParticipant,
+    };
+  });
+
+  const filteredContacts = transformedContacts?.filter((contact) => contact?.firstname?.toLowerCase().includes(searchQuery.toLowerCase()) || contact?.lastname?.toLowerCase().includes(searchQuery.toLowerCase()));
   const filteredMessages = messages?.filter((message) => chatSearchQuery === "" || message?.text.toLowerCase().includes(chatSearchQuery.toLowerCase()));
 
   // Call functions
@@ -156,45 +230,64 @@ export default function ChatDashboard() {
     setCallDuration(0);
   };
 
-  const startAudioCall = async () => {
+  const startAudioCall = async (remoteId: string) => {
     try {
-      setCallState("audio-calling");
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      localStreamRef.current = stream;
-
-      // Simulate call connection
-      setTimeout(() => {
-        setCallState("audio-connected");
-        startCallTimer();
-      }, 2000);
-    } catch (error) {
-      console.error("Audio call error:", error);
-      alert("Could not access microphone");
-      setCallState("idle");
-    }
-  };
-
-  const startVideoCall = async () => {
-    try {
-      setCallState("video-calling");
       const stream = await navigator.mediaDevices.getUserMedia({
         audio: true,
-        video: true,
+        video: false,
       });
-      localStreamRef.current = stream;
 
+      localStreamRef.current = stream;
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
       }
 
-      // Simulate call connection
-      setTimeout(() => {
-        setCallState("video-connected");
-        startCallTimer();
-      }, 2000);
+      if (!peer) throw new Error("Peer not initialized");
+
+      const call = peer.call(remoteId, stream);
+
+      call.on("stream", (remoteStream) => {
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = remoteStream;
+        }
+      });
+
+      connRef.current = call;
+      setCallState("video-connected");
+      startCallTimer();
     } catch (error) {
       console.error("Video call error:", error);
-      alert("Could not access camera/microphone");
+      setCallState("idle");
+    }
+  };
+
+  const startVideoCall = async (remoteId: string) => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        audio: true,
+        video: true,
+      });
+
+      localStreamRef.current = stream;
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream;
+      }
+
+      if (!peer) throw new Error("Peer not initialized");
+
+      const call = peer.call(remoteId, stream);
+
+      call.on("stream", (remoteStream) => {
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = remoteStream;
+        }
+      });
+
+      connRef.current = call;
+      setCallState("video-connected");
+      startCallTimer();
+    } catch (error) {
+      console.error("Video call error:", error);
       setCallState("idle");
     }
   };
@@ -212,6 +305,14 @@ export default function ChatDashboard() {
 
     if (localVideoRef.current) {
       localVideoRef.current.srcObject = null;
+    }
+    if (remoteVideoRef.current) {
+      remoteVideoRef.current.srcObject = null;
+    }
+
+    if (connRef.current) {
+      connRef.current.close();
+      connRef.current = null;
     }
   };
 
@@ -254,7 +355,7 @@ export default function ChatDashboard() {
     };
 
     try {
-      const response = await sendMessage(conversationId, selectedContact?._id, text);
+      const response = await sendMessage(conversationId, text);
       setMessages((prev) => [...prev, newMessage]);
       setMessageInput("");
     } catch (error: any) {
@@ -337,7 +438,6 @@ export default function ChatDashboard() {
       try {
         const response = await messageContacts();
         setAllContacts(response);
-        console.log("users list", response);
       } catch (error) {
         console.log("error getting users", error);
         setListError("Couldn't fetch users. Please Try again");
@@ -505,204 +605,206 @@ export default function ChatDashboard() {
       </div>
 
       {/* Right Main Chat Window */}
-      <div className={`${isMobile ? (showSidebar ? "w-0 overflow-hidden" : "w-full") : "flex-1"} flex flex-col bg-gray-50 transition-all duration-300`}>
-        {/* Chat Header */}
-        <div className="bg-gray-100 border-b border-gray-200 p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              {isMobile && (
-                <button onClick={() => setShowSidebar(true)} className="p-2 text-gray-600 hover:text-gray-800 rounded-full md:hidden">
-                  <ArrowLeft className="w-5 h-5" />
+      {selectedContact && (
+        <div className={`${isMobile ? (showSidebar ? "w-0 overflow-hidden" : "w-full") : "flex-1"} flex flex-col bg-gray-50 transition-all duration-300`}>
+          {/* Chat Header */}
+          <div className="bg-gray-100 border-b border-gray-200 p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center space-x-3">
+                {isMobile && (
+                  <button onClick={() => setShowSidebar(true)} className="p-2 text-gray-600 hover:text-gray-800 rounded-full md:hidden">
+                    <ArrowLeft className="w-5 h-5" />
+                  </button>
+                )}
+                <img src={selectedContact?.avatar || "/placeholder.svg"} alt={selectedContact?.firstname} className="w-10 h-10 rounded-full object-cover bg-gray-200" />
+                <div>
+                  <h3 className="text-lg font-medium text-gray-900">
+                    {selectedContact?.firstname} {selectedContact?.lastname}
+                  </h3>
+                  <p className="text-sm text-gray-500">{selectedContact?.online ? "Online" : "Last seen recently"}</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-2">
+                <button onClick={startAudioCall} className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-full transition-colors">
+                  <Phone className="w-5 h-5" />
                 </button>
-              )}
-              <img src={selectedContact?.avatar || "/placeholder.svg"} alt={selectedContact?.firstname} className="w-10 h-10 rounded-full object-cover bg-gray-200" />
-              <div>
-                <h3 className="text-lg font-medium text-gray-900">
-                  {selectedContact?.firstname} {selectedContact?.lastname}
-                </h3>
-                <p className="text-sm text-gray-500">{selectedContact?.online ? "Online" : "Last seen recently"}</p>
+                <button onClick={startVideoCall} className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-full transition-colors">
+                  <Video className="w-5 h-5" />
+                </button>
+                <button onClick={() => setShowChatSearch(!showChatSearch)} className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-full transition-colors">
+                  <Search className="w-5 h-5" />
+                </button>
               </div>
             </div>
-            <div className="flex items-center space-x-2">
-              <button onClick={startAudioCall} className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-full transition-colors">
-                <Phone className="w-5 h-5" />
-              </button>
-              <button onClick={startVideoCall} className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-full transition-colors">
-                <Video className="w-5 h-5" />
-              </button>
-              <button onClick={() => setShowChatSearch(!showChatSearch)} className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-full transition-colors">
-                <Search className="w-5 h-5" />
-              </button>
-            </div>
+
+            {/* Chat Search */}
+            {showChatSearch && (
+              <div className="mt-3 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <input type="text" placeholder="Search messages..." value={chatSearchQuery} onChange={(e) => setChatSearchQuery(e.target.value)} className="w-full pl-10 pr-10 py-2 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--secondary))]" />
+                <button
+                  onClick={() => {
+                    setShowChatSearch(false);
+                    setChatSearchQuery("");
+                  }}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Chat Search */}
-          {showChatSearch && (
-            <div className="mt-3 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <input type="text" placeholder="Search messages..." value={chatSearchQuery} onChange={(e) => setChatSearchQuery(e.target.value)} className="w-full pl-10 pr-10 py-2 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--secondary))]" />
-              <button
-                onClick={() => {
-                  setShowChatSearch(false);
-                  setChatSearchQuery("");
-                }}
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          )}
-        </div>
-
-        {/* Messages */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
-          {filteredMessages.map((message) => (
-            <div key={message?.id} className={`flex ${message?.sent ? "justify-end" : "justify-start"}`}>
-              {message?.isMissedCall ? (
-                <div className="flex items-center justify-center w-full">
-                  <div className="bg-white text-red-500 shadow-sm p-3 rounded-xl flex items-center space-x-3 mx-auto">
-                    <PhoneMissed className="w-4 h-4" />
-                    <p className="text-sm">
-                      {message?.text} at <span className="text-xs">{message?.timestamp}</span>
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${message?.sent ? "bg-secondary text-white" : "bg-white text-gray-900 shadow-sm"}`}>
-                  {message?.type === "image" && message?.imageUrl && <img src={message?.imageUrl} alt="Shared image" className="w-full h-48 object-cover rounded mb-2" />}
-                  {message?.type === "voice" && message?.audioUrl && (
-                    <div className="flex items-center space-x-2">
-                      <audio controls src={message?.audioUrl} className="w-full h-8" />
+          {/* Messages */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+            {filteredMessages.map((message: any) => (
+              <div key={message?.id} className={`flex ${message?.sent || message?.sender?._id === loggedInUser?.id ? "justify-end" : "justify-start"}`}>
+                {message?.isMissedCall ? (
+                  <div className="flex items-center justify-center w-full">
+                    <div className="bg-white text-red-500 shadow-sm p-3 rounded-xl flex items-center space-x-3 mx-auto">
+                      <PhoneMissed className="w-4 h-4" />
+                      <p className="text-sm">
+                        {message?.text} at <span className="text-xs">{message?.timestamp}</span>
+                      </p>
                     </div>
-                  )}
-                  {message?.type === "file" && (
-                    <div className="flex items-center space-x-2">
+                  </div>
+                ) : (
+                  <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${message?.sent || message?.sender?._id === loggedInUser?.id ? "bg-secondary text-white" : "bg-white text-gray-900 shadow-sm"}`}>
+                    {message?.type === "image" && message?.imageUrl && <img src={message?.imageUrl} alt="Shared image" className="w-full h-48 object-cover rounded mb-2" />}
+                    {message?.type === "voice" && message?.audioUrl && (
+                      <div className="flex items-center space-x-2">
+                        <audio controls src={message?.audioUrl} className="w-full h-8" />
+                      </div>
+                    )}
+                    {message?.type === "file" && (
+                      <div className="flex items-center space-x-2">
+                        <FileText className="w-5 h-5" />
+                        <span className="text-sm">{message?.fileName || "File"}</span>
+                      </div>
+                    )}
+                    <p className="text-sm">{message?.text}</p>
+                    <div className={`flex items-center justify-end mt-1 space-x-1 ${message?.sent || message?.sender?._id === loggedInUser?.id ? "text-blue-100" : "text-gray-500"}`}>
+                      <span className="text-xs">{message?.timestamp}</span>
+                      {message?.sent || (message?.sender?._id === loggedInUser?.id && <div className="flex">{message?.read ? <CheckCheck className="w-3 h-3 text-blue-300" /> : message?.delivered ? <CheckCheck className="w-3 h-3" /> : <Check className="w-3 h-3" />}</div>)}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ))}
+            <div ref={messagesEndRef} />
+          </div>
+
+          {/* Message Input */}
+          <div className="bg-gray-100 border-t border-gray-200 p-4">
+            <div className="flex items-center space-x-3">
+              {/* Paperclip icon */}
+              {/* Emoji Picker */}
+              <div className="relative">
+                <button className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-full transition-colors" onClick={() => setShowEmojiPicker(!showEmojiPicker)}>
+                  <Smile className="w-5 h-5" />
+                </button>
+                {showEmojiPicker && (
+                  <div className="absolute bottom-12 left-0 bg-white border rounded-lg shadow-lg p-3 z-20 w-64 h-48 overflow-y-auto">
+                    <div className="grid grid-cols-8 gap-1">
+                      {emojis.map((emoji, index) => (
+                        <button
+                          key={index}
+                          onClick={() => {
+                            setMessageInput((prev) => prev + emoji);
+                            setShowEmojiPicker(false);
+                          }}
+                          className="text-lg hover:bg-gray-100 p-1 rounded">
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Attachment Options */}
+              <div className="relative">
+                <button className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-full transition-colors" onClick={() => setShowAttachmentOptions(!showAttachmentOptions)}>
+                  <Paperclip className="w-5 h-5" />
+                </button>
+                {showAttachmentOptions && (
+                  <div className="absolute bottom-12 left-0 w-48 bg-white rounded-lg shadow-lg border z-20">
+                    <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 w-full px-4 py-2 text-left hover:bg-gray-100 rounded-t-lg">
+                      <ImagePlay className="w-5 h-5" />
+                      <span>Photo and Video</span>
+                    </button>
+                    <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 w-full px-4 py-2 text-left hover:bg-gray-100 rounded-b-lg">
                       <FileText className="w-5 h-5" />
-                      <span className="text-sm">{message?.fileName || "File"}</span>
+                      <span>Documents</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Message Input Field */}
+              <div className="flex-1 relative">
+                {!isRecording && !recordedAudioURL && (
+                  <>
+                    <button onClick={() => cameraInputRef.current?.click()} className="absolute left-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-full transition-colors">
+                      <Camera className="w-5 h-5" />
+                    </button>
+
+                    <input
+                      type="text"
+                      placeholder="Type a message"
+                      value={messageInput}
+                      onChange={(e) => setMessageInput(e.target.value)}
+                      className="w-full pl-12 pr-12 py-2 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--secondary))]"
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && messageInput.trim() && !sending) {
+                          e.preventDefault();
+                          handleSend();
+                        }
+                      }}
+                    />
+
+                    <button onClick={handleSend} disabled={!messageInput.trim() || sending} className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 bg-secondary text-white rounded-full hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                      <Send className="w-5 h-5" />
+                    </button>
+                  </>
+                )}
+
+                {isRecording && (
+                  <div className="flex items-center justify-center w-full bg-white py-3 rounded-lg border border-dashed border-red-500">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
+                      <p className="text-red-600 text-sm font-medium">Recording... Tap to stop</p>
                     </div>
-                  )}
-                  <p className="text-sm">{message?.text}</p>
-                  <div className={`flex items-center justify-end mt-1 space-x-1 ${message?.sent ? "text-blue-100" : "text-gray-500"}`}>
-                    <span className="text-xs">{message?.timestamp}</span>
-                    {message?.sent && <div className="flex">{message?.read ? <CheckCheck className="w-3 h-3 text-blue-300" /> : message?.delivered ? <CheckCheck className="w-3 h-3" /> : <Check className="w-3 h-3" />}</div>}
                   </div>
-                </div>
-              )}
-            </div>
-          ))}
-          <div ref={messagesEndRef} />
-        </div>
+                )}
 
-        {/* Message Input */}
-        <div className="bg-gray-100 border-t border-gray-200 p-4">
-          <div className="flex items-center space-x-3">
-            {/* Paperclip icon */}
-            {/* Emoji Picker */}
-            <div className="relative">
-              <button className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-full transition-colors" onClick={() => setShowEmojiPicker(!showEmojiPicker)}>
-                <Smile className="w-5 h-5" />
+                {recordedAudioURL && !isRecording && (
+                  <div className="flex items-center gap-2 bg-white p-2 rounded-lg border border-gray-300">
+                    <audio controls src={recordedAudioURL} className="flex-1 h-8" />
+                    <button onClick={sendVoiceNote} className="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600 transition-colors">
+                      Send
+                    </button>
+                    <button
+                      onClick={() => {
+                        setRecordedAudioURL(null);
+                        if (mediaRecorder) {
+                          mediaRecorder.stream.getTracks().forEach((track) => track.stop());
+                        }
+                      }}
+                      className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors">
+                      Delete
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Voice Record Button */}
+              <button onClick={handleVoiceRecord} className={`p-2 rounded-full transition-colors ${isRecording ? "bg-red-100 text-red-500 animate-pulse" : "text-gray-600 hover:text-gray-800 hover:bg-gray-200"}`}>
+                <Mic className="w-5 h-5" />
               </button>
-              {showEmojiPicker && (
-                <div className="absolute bottom-12 left-0 bg-white border rounded-lg shadow-lg p-3 z-20 w-64 h-48 overflow-y-auto">
-                  <div className="grid grid-cols-8 gap-1">
-                    {emojis.map((emoji, index) => (
-                      <button
-                        key={index}
-                        onClick={() => {
-                          setMessageInput((prev) => prev + emoji);
-                          setShowEmojiPicker(false);
-                        }}
-                        className="text-lg hover:bg-gray-100 p-1 rounded">
-                        {emoji}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
             </div>
-
-            {/* Attachment Options */}
-            <div className="relative">
-              <button className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-full transition-colors" onClick={() => setShowAttachmentOptions(!showAttachmentOptions)}>
-                <Paperclip className="w-5 h-5" />
-              </button>
-              {showAttachmentOptions && (
-                <div className="absolute bottom-12 left-0 w-48 bg-white rounded-lg shadow-lg border z-20">
-                  <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 w-full px-4 py-2 text-left hover:bg-gray-100 rounded-t-lg">
-                    <ImagePlay className="w-5 h-5" />
-                    <span>Photo and Video</span>
-                  </button>
-                  <button onClick={() => fileInputRef.current?.click()} className="flex items-center gap-2 w-full px-4 py-2 text-left hover:bg-gray-100 rounded-b-lg">
-                    <FileText className="w-5 h-5" />
-                    <span>Documents</span>
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Message Input Field */}
-            <div className="flex-1 relative">
-              {!isRecording && !recordedAudioURL && (
-                <>
-                  <button onClick={() => cameraInputRef.current?.click()} className="absolute left-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-full transition-colors">
-                    <Camera className="w-5 h-5" />
-                  </button>
-
-                  <input
-                    type="text"
-                    placeholder="Type a message"
-                    value={messageInput}
-                    onChange={(e) => setMessageInput(e.target.value)}
-                    className="w-full pl-12 pr-12 py-2 bg-white rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-[hsl(var(--secondary))]"
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter" && messageInput.trim() && !sending) {
-                        e.preventDefault();
-                        handleSend();
-                      }
-                    }}
-                  />
-
-                  <button onClick={handleSend} disabled={!messageInput.trim() || sending} className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 bg-secondary text-white rounded-full hover:bg-green-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                    <Send className="w-5 h-5" />
-                  </button>
-                </>
-              )}
-
-              {isRecording && (
-                <div className="flex items-center justify-center w-full bg-white py-3 rounded-lg border border-dashed border-red-500">
-                  <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse"></div>
-                    <p className="text-red-600 text-sm font-medium">Recording... Tap to stop</p>
-                  </div>
-                </div>
-              )}
-
-              {recordedAudioURL && !isRecording && (
-                <div className="flex items-center gap-2 bg-white p-2 rounded-lg border border-gray-300">
-                  <audio controls src={recordedAudioURL} className="flex-1 h-8" />
-                  <button onClick={sendVoiceNote} className="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600 transition-colors">
-                    Send
-                  </button>
-                  <button
-                    onClick={() => {
-                      setRecordedAudioURL(null);
-                      if (mediaRecorder) {
-                        mediaRecorder.stream.getTracks().forEach((track) => track.stop());
-                      }
-                    }}
-                    className="px-3 py-1 bg-red-500 text-white text-sm rounded hover:bg-red-600 transition-colors">
-                    Delete
-                  </button>
-                </div>
-              )}
-            </div>
-
-            {/* Voice Record Button */}
-            <button onClick={handleVoiceRecord} className={`p-2 rounded-full transition-colors ${isRecording ? "bg-red-100 text-red-500 animate-pulse" : "text-gray-600 hover:text-gray-800 hover:bg-gray-200"}`}>
-              <Mic className="w-5 h-5" />
-            </button>
           </div>
         </div>
-      </div>
+      )}
 
       {/* Hidden file inputs */}
       <input ref={fileInputRef} type="file" accept="*/*" multiple onChange={handleFileSelect} className="hidden" />

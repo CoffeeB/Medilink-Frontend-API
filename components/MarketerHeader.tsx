@@ -15,14 +15,26 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import AvatarUpload from './AvatarUpload';
+import { useRouter } from "next/navigation"
 
 const MarketerHeader = () => {
   // const pathname = usePathname()
-   const [mobileOpen, setMobileOpen] = useState(false);
+  const router = useRouter()
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const isActive = (path: string) => {
     return typeof window !== "undefined" && window.location.pathname === path;
   };
+
+  const handleLogout = async () => {
+    try {
+      localStorage.removeItem("token")  
+      // Redirect to login pag
+     router.push("/marketer/login")
+    } catch (error) {
+      console.error("Logout failed", error)
+    }
+  }
 
   // const isActive = (path: string) => pathname === path
 
@@ -63,7 +75,12 @@ const MarketerHeader = () => {
                   <DropdownMenuItem className='cursor-pointer'>Profile</DropdownMenuItem>
                 </Link>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className='cursor-pointer'>Log out</DropdownMenuItem>
+                <DropdownMenuItem 
+                  className='cursor-pointer'
+                  onClick={handleLogout}
+                  >
+                    Log out
+                </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
             

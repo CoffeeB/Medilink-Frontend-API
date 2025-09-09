@@ -14,9 +14,11 @@ import { seeAllPendingForms, seeFormDetails } from "@/hooks/form";
 import { seeAllNotifications } from "@/hooks/notifications";
 import DoctorCalendarView from "./DoctorCalendarView";
 import DoctorCalendarViewModal from "./DoctorCalendarViewModal";
+import { useRouter } from "next/navigation";
 
 const DoctorHeader = () => {
   // const pathname = usePathname()
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [notifications, setNotifications] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -69,6 +71,16 @@ const DoctorHeader = () => {
     // Cleanup when component unmounts
     return () => clearInterval(interval);
   }, []);
+
+  const handleLogout = async () => {
+    try {
+      localStorage.removeItem("token")  
+      // Redirect to login pag
+     router.push("/doctor/login")
+    } catch (error) {
+      console.error("Logout failed", error)
+    }
+  }
 
   return (
     <header className="bg-white border-b">
@@ -128,7 +140,10 @@ const DoctorHeader = () => {
                 </Link>
                 <DropdownMenuSeparator />
                 <Link href="/doctor/login" onClick={logout}>
-                  <DropdownMenuItem className="cursor-pointer">Log out</DropdownMenuItem>
+                  <DropdownMenuItem 
+                    className="cursor-pointer"
+                    onClick={handleLogout}
+                    >Log out</DropdownMenuItem>
                 </Link>
               </DropdownMenuContent>
             </DropdownMenu>

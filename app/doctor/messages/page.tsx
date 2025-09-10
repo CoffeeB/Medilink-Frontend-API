@@ -3,7 +3,7 @@
 import axiosInstance from "@/lib/axios";
 import { activeMessages, contactMessage, contactMessageHistory, fetchPeerId, messageContacts, sendMessage, storePeerId, usersList } from "@/hooks/messages";
 import React, { useState, useRef, useEffect } from "react";
-import { Search, Phone, Video, Smile, Paperclip, Send, Check, CheckCheck, PhoneMissed, ListFilter, Camera, Mic, MessageSquareDot, Pen, Users, FileText, ImagePlay, Plus, PhoneCall, PhoneOff, VideoOff, MicOff, X, ArrowLeft, MoreVertical, Download, Play, Pause, SquarePen, MessageSquareWarningIcon } from "lucide-react";
+import { Search, Phone, Video, Smile, Paperclip, Send, Check, CheckCheck, PhoneMissed, ListFilter, Camera, Mic, MessageSquareDot, Pen, Users, FileText, ImagePlay, Plus, PhoneCall, PhoneOff, VideoOff, MicOff, X, ArrowLeft, MoreVertical, Download, Play, Pause, SquarePen, MessageSquareWarningIcon, PhoneOffIcon } from "lucide-react";
 import ContactModal from "@/components/ContactModal";
 import Peer, { MediaConnection } from "peerjs";
 import Cookies from "js-cookie";
@@ -61,6 +61,7 @@ export default function ChatDashboard() {
   const [remotePeerId, setRemotePeerId] = useState<string | null>(null);
   const [recipientPeerId, setRecipientPeerId] = useState<string | null>(null);
   const [myPeerId, setMyPeerId] = useState<string | null>(null);
+  const [callerId, setCallerId] = useState<string | null>(null);
   const connRef = useRef<MediaConnection | null>(null);
 
   // Refs
@@ -104,48 +105,47 @@ export default function ChatDashboard() {
 
     newPeer.on("open", async (id) => {
       try {
-        setMyPeerId(id)
-        const response = await storePeerId(id);
+        setMyPeerId(id);
+        await storePeerId(id);
       } catch (err) {
         console.error("Failed to send peer ID:", err);
       }
     });
 
     newPeer.on("call", (call) => {
-      const { type, callerId } = call.metadata || {};
-    
-      const constraints =
-        type === "video"
-          ? { audio: true, video: true }
-          : { audio: true, video: false };
-    
+      const { type, callerId: metadataCallerId } = call.metadata || {};
+      const constraints = type === "video" ? { audio: true, video: true } : { audio: true, video: false };
+
       navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
         call.answer(stream);
         localStreamRef.current = stream;
-    
+
+        // Receiver: set callerId based on who initiated the call
+        setCallerId(metadataCallerId || call.peer);
+
         if (type === "video" && localVideoRef.current) {
           localVideoRef.current.srcObject = stream;
         }
-    
+
         call.on("stream", (remoteStream) => {
-          console.log("Remote stream from", callerId || call.peer);
+          console.log("Remote stream from", metadataCallerId || call.peer);
           if (remoteVideoRef.current) {
             remoteVideoRef.current.srcObject = remoteStream;
           }
         });
-    
+
         call.on("close", () => {
           setCallState("idle");
           stopCallTimer();
           if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
           if (localVideoRef.current) localVideoRef.current.srcObject = null;
         });
-    
+
         connRef.current = call;
         setCallState(type === "video" ? "video-connected" : "audio-connected");
         startCallTimer();
       });
-    });    
+    });
 
     setPeer(newPeer);
 
@@ -256,15 +256,15 @@ export default function ChatDashboard() {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
       localStreamRef.current = stream;
-  
+
       if (!peer) throw new Error("Peer not initialized");
-  
+
       const call = peer.call(remoteId, stream, { metadata: { type: "audio", callerId: myPeerId } });
-  
+
       call.on("stream", (remoteStream) => {
         if (remoteVideoRef.current) remoteVideoRef.current.srcObject = remoteStream;
       });
-  
+
       connRef.current = call;
       setCallState("audio-connected");
       startCallTimer();
@@ -273,21 +273,21 @@ export default function ChatDashboard() {
       setCallState("idle");
     }
   };
-  
+
   const startVideoCall = async (remoteId: string) => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
       localStreamRef.current = stream;
       if (localVideoRef.current) localVideoRef.current.srcObject = stream;
-  
+
       if (!peer) throw new Error("Peer not initialized");
-  
+
       const call = peer.call(remoteId, stream, { metadata: { type: "video", callerId: myPeerId } });
-  
+
       call.on("stream", (remoteStream) => {
         if (remoteVideoRef.current) remoteVideoRef.current.srcObject = remoteStream;
       });
-  
+
       connRef.current = call;
       setCallState("video-connected");
       startCallTimer();
@@ -295,7 +295,7 @@ export default function ChatDashboard() {
       console.error("Video call error:", err);
       setCallState("idle");
     }
-  };  
+  };
 
   const endCall = () => {
     setCallState("idle");
@@ -488,14 +488,21 @@ export default function ChatDashboard() {
         </div>
 
         {/* Video display (only for video calls) */}
-        {["video-calling", "video-connected"].includes(callState) && (
-          <div className="relative w-full max-w-md h-64 mb-8">
-            {/* Local video (muted) */}
-            <video ref={localVideoRef} autoPlay muted playsInline className="w-full h-full object-cover rounded-lg bg-gray-800" />
-            {/* Remote video */}
-            <video ref={remoteVideoRef} autoPlay playsInline className="absolute top-4 right-4 w-20 h-16 object-cover rounded border-2 border-white bg-gray-700" />
-          </div>
-        )}
+        <div className="relative w-full max-w-md h-64 mb-8">
+          {myPeerId === callerId ? (
+            // Caller layout: me big, recipient small
+            <>
+              <video ref={localVideoRef} autoPlay muted playsInline className="w-full h-full object-contain rounded-lg bg-black" />
+              <video ref={remoteVideoRef} autoPlay playsInline className="absolute bottom-2 right-2 w-24 h-20 object-cover rounded border-2 border-white bg-black" />
+            </>
+          ) : (
+            // Recipient layout: recipient big, me small
+            <>
+              <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-contain rounded-lg bg-black" />
+              <video ref={localVideoRef} autoPlay muted playsInline className="absolute bottom-2 right-2 w-24 h-20 object-cover rounded border-2 border-white bg-black" />
+            </>
+          )}
+        </div>
         {/* Call controls */}
         <div className="flex items-center gap-6">
           <button onClick={toggleMute} className={`p-4 rounded-full ${isMuted ? "bg-red-500" : "bg-gray-600"} hover:bg-opacity-80 transition-colors`}>
@@ -631,10 +638,10 @@ export default function ChatDashboard() {
               </div>
               <div className="flex items-center space-x-2">
                 <button onClick={() => startAudioCall(recipientPeerId)} disabled={!recipientPeerId} className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-full transition-colors cursor-pointer">
-                  <Phone className="w-5 h-5" />
+                  {recipientPeerId ? <Phone className="w-5 h-5" /> : <PhoneOffIcon className="w-5 h-5" />}
                 </button>
                 <button onClick={() => startVideoCall(recipientPeerId)} disabled={!recipientPeerId} className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-full transition-colors cursor-pointer">
-                  <Video className="w-5 h-5" />
+                  {recipientPeerId ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
                 </button>
                 <button onClick={() => setShowChatSearch(!showChatSearch)} className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-full transition-colors cursor-pointer">
                   <Search className="w-5 h-5" />

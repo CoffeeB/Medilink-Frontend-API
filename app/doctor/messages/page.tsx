@@ -54,6 +54,7 @@ export default function ChatDashboard() {
   const [callDuration, setCallDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
+  const [contactsLoaded, setContactsLoaded] = useState(false);
 
   // Refs
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -82,7 +83,17 @@ export default function ChatDashboard() {
     const fetchContacts = async () => {
       try {
         const response = await activeMessages();
-        setContacts(response);
+
+        setContacts((prev) => {
+          // merge existing + fresh ones
+          const map = new Map();
+
+          [...response, ...prev].forEach((c) => {
+            map.set(c._id || c.id, c);
+          });
+
+          return Array.from(map.values());
+        });
       } catch (error: any) {
         console.error(error);
       }
@@ -91,24 +102,23 @@ export default function ChatDashboard() {
   }, []);
 
   const handleSelectContact = async (contact: Contact) => {
-    // Set the active/open chat
+    if (!contactsLoaded) return; // don’t update until loaded
+
     setSelectedContact(contact);
 
-    // Add to contacts if it doesn’t exist already
     setContacts((prev) => {
-      const exists = prev.some((c) => (c?.id && c?.id === contact.id) || (c?._id && c?._id === contact._id));
-
-      if (exists) {
-        return prev; // don’t replace, just keep as is
+      const index = prev.findIndex((c) => (c?.id && c?.id === contact.id) || (c?._id && c?._id === contact._id));
+      if (index !== -1) {
+        const updated = [...prev];
+        updated[index] = { ...prev[index], ...contact };
+        return updated;
       }
-
-      return [...prev, contact]; // append new
+      return [...prev, contact];
     });
 
     try {
-      const response = await contactMessage(selectedContact?._id || contact?._id);
+      const response = await contactMessage(contact?._id);
       setConversationId(response?._id);
-      console.log("response- ", response);
     } catch (error) {
       console.log(error);
     }

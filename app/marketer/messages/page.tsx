@@ -149,7 +149,7 @@ export default function ChatDashboard() {
     });
 
     try {
-      const response = await contactMessage(selectedContact?._id || contact?._id);
+      const response = await contactMessage(contact?._id);
       setConversationId(response?._id);
       const messageHistory = await contactMessageHistory(response?._id);
       setMessages(messageHistory);
@@ -192,8 +192,6 @@ export default function ChatDashboard() {
 
   const transformedContacts = contacts?.map((contact) => {
     const otherParticipant = contact?.participants?.find((p) => {
-      console.log("loggedInUser- ", loggedInUser?._id);
-      console.log("participant- ", p._id);
       return p._id !== loggedInUser?.id;
     });
 

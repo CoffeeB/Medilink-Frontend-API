@@ -1,12 +1,13 @@
 "use client";
 
 import axiosInstance from "@/lib/axios";
-import { activeMessages, contactMessage, contactMessageHistory, messageContacts, sendMessage, usersList } from "@/hooks/messages";
+import { activeMessages, contactMessage, contactMessageHistory, fetchPeerId, messageContacts, sendMessage, storePeerId, usersList } from "@/hooks/messages";
 import React, { useState, useRef, useEffect } from "react";
 import { Search, Phone, Video, Smile, Paperclip, Send, Check, CheckCheck, PhoneMissed, ListFilter, Camera, Mic, MessageSquareDot, Pen, Users, FileText, ImagePlay, Plus, PhoneCall, PhoneOff, VideoOff, MicOff, X, ArrowLeft, MoreVertical, Download, Play, Pause, SquarePen, MessageSquareWarningIcon } from "lucide-react";
 import ContactModal from "@/components/ContactModal";
 import Peer, { MediaConnection } from "peerjs";
 import Cookies from "js-cookie";
+import { format } from "date-fns";
 
 interface Contact {
   email: string;
@@ -58,6 +59,8 @@ export default function ChatDashboard() {
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [peer, setPeer] = useState<Peer | null>(null);
   const [remotePeerId, setRemotePeerId] = useState<string | null>(null);
+  const [recipientPeerId, setRecipientPeerId] = useState<string | null>(null);
+  const [myPeerId, setMyPeerId] = useState<string | null>(null);
   const connRef = useRef<MediaConnection | null>(null);
 
   // Refs
@@ -99,32 +102,50 @@ export default function ChatDashboard() {
   useEffect(() => {
     const newPeer = new Peer();
 
-    newPeer.on("open", (id) => {
-      console.log("My peer ID is:", id);
-      // TODO: send this ID to your backend so other users can call you
+    newPeer.on("open", async (id) => {
+      try {
+        setMyPeerId(id)
+        const response = await storePeerId(id);
+      } catch (err) {
+        console.error("Failed to send peer ID:", err);
+      }
     });
 
     newPeer.on("call", (call) => {
-      // Incoming call
-      navigator.mediaDevices.getUserMedia({ video: true, audio: true }).then((stream) => {
-        call.answer(stream); // Answer with our stream
+      const { type, callerId } = call.metadata || {};
+    
+      const constraints =
+        type === "video"
+          ? { audio: true, video: true }
+          : { audio: true, video: false };
+    
+      navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
+        call.answer(stream);
         localStreamRef.current = stream;
-
-        if (localVideoRef.current) {
+    
+        if (type === "video" && localVideoRef.current) {
           localVideoRef.current.srcObject = stream;
         }
-
+    
         call.on("stream", (remoteStream) => {
+          console.log("Remote stream from", callerId || call.peer);
           if (remoteVideoRef.current) {
             remoteVideoRef.current.srcObject = remoteStream;
           }
         });
-
+    
+        call.on("close", () => {
+          setCallState("idle");
+          stopCallTimer();
+          if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
+          if (localVideoRef.current) localVideoRef.current.srcObject = null;
+        });
+    
         connRef.current = call;
-        setCallState("video-connected");
+        setCallState(type === "video" ? "video-connected" : "audio-connected");
         startCallTimer();
       });
-    });
+    });    
 
     setPeer(newPeer);
 
@@ -153,6 +174,9 @@ export default function ChatDashboard() {
       setConversationId(response?._id);
       const messageHistory = await contactMessageHistory(response?._id);
       setMessages(messageHistory);
+      const getPeerIdResponse = await fetchPeerId(contact?._id);
+      setRecipientPeerId(getPeerIdResponse?.peerId);
+      console.log("getPeerIdResponse", getPeerIdResponse);
     } catch (error) {
       console.log(error);
     }
@@ -230,65 +254,48 @@ export default function ChatDashboard() {
 
   const startAudioCall = async (remoteId: string) => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: false,
-      });
-
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
       localStreamRef.current = stream;
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = stream;
-      }
-
+  
       if (!peer) throw new Error("Peer not initialized");
-
-      const call = peer.call(remoteId, stream);
-
+  
+      const call = peer.call(remoteId, stream, { metadata: { type: "audio", callerId: myPeerId } });
+  
       call.on("stream", (remoteStream) => {
-        if (remoteVideoRef.current) {
-          remoteVideoRef.current.srcObject = remoteStream;
-        }
+        if (remoteVideoRef.current) remoteVideoRef.current.srcObject = remoteStream;
       });
-
+  
       connRef.current = call;
-      setCallState("video-connected");
+      setCallState("audio-connected");
       startCallTimer();
-    } catch (error) {
-      console.error("Video call error:", error);
+    } catch (err) {
+      console.error("Audio call error:", err);
       setCallState("idle");
     }
   };
-
+  
   const startVideoCall = async (remoteId: string) => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: true,
-        video: true,
-      });
-
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
       localStreamRef.current = stream;
-      if (localVideoRef.current) {
-        localVideoRef.current.srcObject = stream;
-      }
-
+      if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+  
       if (!peer) throw new Error("Peer not initialized");
-
-      const call = peer.call(remoteId, stream);
-
+  
+      const call = peer.call(remoteId, stream, { metadata: { type: "video", callerId: myPeerId } });
+  
       call.on("stream", (remoteStream) => {
-        if (remoteVideoRef.current) {
-          remoteVideoRef.current.srcObject = remoteStream;
-        }
+        if (remoteVideoRef.current) remoteVideoRef.current.srcObject = remoteStream;
       });
-
+  
       connRef.current = call;
       setCallState("video-connected");
       startCallTimer();
-    } catch (error) {
-      console.error("Video call error:", error);
+    } catch (err) {
+      console.error("Video call error:", err);
       setCallState("idle");
     }
-  };
+  };  
 
   const endCall = () => {
     setCallState("idle");
@@ -301,17 +308,16 @@ export default function ChatDashboard() {
       localStreamRef.current = null;
     }
 
-    if (localVideoRef.current) {
-      localVideoRef.current.srcObject = null;
-    }
-    if (remoteVideoRef.current) {
-      remoteVideoRef.current.srcObject = null;
-    }
+    if (localVideoRef.current) localVideoRef.current.srcObject = null;
+    if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
 
     if (connRef.current) {
-      connRef.current.close();
+      connRef.current.close(); // triggers call.on("close") for the other peer
       connRef.current = null;
     }
+
+    // OPTIONAL: notify backend/socket so other user also calls endCall()
+    // socket.emit("end-call", { conversationId });
   };
 
   const toggleMute = () => {
@@ -481,14 +487,15 @@ export default function ChatDashboard() {
           </p>
         </div>
 
-        {/* Video display */}
-        {(callState === "video-calling" || callState === "video-connected") && (
+        {/* Video display (only for video calls) */}
+        {["video-calling", "video-connected"].includes(callState) && (
           <div className="relative w-full max-w-md h-64 mb-8">
-            <video ref={localVideoRef} autoPlay muted className="w-full h-full object-cover rounded-lg bg-gray-800" />
-            <video ref={remoteVideoRef} autoPlay className="absolute top-4 right-4 w-20 h-16 object-cover rounded border-2 border-white bg-gray-700" />
+            {/* Local video (muted) */}
+            <video ref={localVideoRef} autoPlay muted playsInline className="w-full h-full object-cover rounded-lg bg-gray-800" />
+            {/* Remote video */}
+            <video ref={remoteVideoRef} autoPlay playsInline className="absolute top-4 right-4 w-20 h-16 object-cover rounded border-2 border-white bg-gray-700" />
           </div>
         )}
-
         {/* Call controls */}
         <div className="flex items-center gap-6">
           <button onClick={toggleMute} className={`p-4 rounded-full ${isMuted ? "bg-red-500" : "bg-gray-600"} hover:bg-opacity-80 transition-colors`}>
@@ -589,7 +596,7 @@ export default function ChatDashboard() {
                     <h3 className="text-sm font-medium text-gray-900 truncate">
                       {contact?.firstname} {contact?.lastname}
                     </h3>
-                    <span className="text-xs text-gray-500 ml-2 whitespace-nowrap">{contact?.timestamp}</span>
+                    <span className="text-xs text-gray-500 ml-2 whitespace-nowrap">{format(new Date(contact?.timestamp), "eee p")}</span>
                   </div>
                   <div className="flex justify-between items-center mt-1">
                     <p className="text-sm text-gray-500 truncate">{contact?.lastMessage}</p>
@@ -623,13 +630,13 @@ export default function ChatDashboard() {
                 </div>
               </div>
               <div className="flex items-center space-x-2">
-                <button onClick={startAudioCall} className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-full transition-colors">
+                <button onClick={() => startAudioCall(recipientPeerId)} disabled={!recipientPeerId} className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-full transition-colors cursor-pointer">
                   <Phone className="w-5 h-5" />
                 </button>
-                <button onClick={startVideoCall} className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-full transition-colors">
+                <button onClick={() => startVideoCall(recipientPeerId)} disabled={!recipientPeerId} className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-full transition-colors cursor-pointer">
                   <Video className="w-5 h-5" />
                 </button>
-                <button onClick={() => setShowChatSearch(!showChatSearch)} className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-full transition-colors">
+                <button onClick={() => setShowChatSearch(!showChatSearch)} className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-full transition-colors cursor-pointer">
                   <Search className="w-5 h-5" />
                 </button>
               </div>

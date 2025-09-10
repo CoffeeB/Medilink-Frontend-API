@@ -48,6 +48,35 @@ export const contactMessage = async (recipientId: any) => {
   return response.data;
 };
 
+export const storePeerId = async (peerId: any) => {
+  const token = Cookies.get("token");
+  if (!token) {
+    throw new Error("Token is required");
+  }
+  const response = await axiosInstance.post(
+    `/api/call/peer`,
+    { peerId },
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+  return response.data;
+};
+
+export const fetchPeerId = async (recipientId: any) => {
+  if (!recipientId) {
+    throw new Error("Recipient ID is required");
+  }
+  const token = Cookies.get("token");
+  if (!token) {
+    throw new Error("Token is required");
+  }
+  const response = await axiosInstance.get(`/api/call/peer/${recipientId}`);
+  return response.data;
+};
+
 export const contactMessageHistory = async (conversationId: any) => {
   if (!conversationId) {
     throw new Error("Conversation ID is required");

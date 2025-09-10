@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 // Define which routes require authentication
-const protectedRoutes = ["/dashboard", "/messages", "/appointments", "/clients", "/profile", "/register-a-doc"];
+const protectedRoutes = ["/dashboard", "/messages", "/appointments", "/client", "/profile", "/register-a-doc"];
 
 export function middleware(req: NextRequest) {
   const token = req.cookies.get("token")?.value;
@@ -23,5 +23,5 @@ export function middleware(req: NextRequest) {
 
 // Configure paths the middleware applies to
 export const config = {
-  matcher: ["/dashboard/:path*", "/messages/:path*", "/appointments/:path*"],
+  matcher: ["/dashboard/:path*", "/messages/:path*", "/appointments/:path*", "/client/:path*"],
 };

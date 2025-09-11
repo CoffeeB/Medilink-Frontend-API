@@ -112,33 +112,46 @@ export default function ChatDashboard() {
       }
     });
 
+    // When answering a call
     newPeer.on("call", (call) => {
       const { type, callerId: metadataCallerId } = call.metadata || {};
       const constraints = type === "video" ? { audio: true, video: true } : { audio: true, video: false };
 
       navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
-        call.answer(stream);
+        // Save local stream
         localStreamRef.current = stream;
 
-        // Receiver: set callerId based on who initiated the call
-        setCallerId(metadataCallerId || call.peer);
-
-        if (type === "video" && localVideoRef.current) {
+        // Attach local preview (with fallback + play)
+        if (localVideoRef.current) {
           localVideoRef.current.srcObject = stream;
+          localVideoRef.current.play().catch((err) => console.warn("Local video play blocked:", err));
+        } else {
+          const interval = setInterval(() => {
+            if (localVideoRef.current) {
+              localVideoRef.current.srcObject = stream;
+              localVideoRef.current.play().catch((err) => console.warn("Local video play blocked:", err));
+              clearInterval(interval);
+            }
+          }, 500);
         }
 
+        // Answer so caller can see me
+        call.answer(stream);
+
+        setCallerId(metadataCallerId || call.peer);
+
+        // Attach remote stream
         call.on("stream", (remoteStream) => {
-          console.log("Remote stream from", metadataCallerId || call.peer);
           if (remoteVideoRef.current) {
             remoteVideoRef.current.srcObject = remoteStream;
+          } else {
+            const interval = setInterval(() => {
+              if (remoteVideoRef.current) {
+                remoteVideoRef.current.srcObject = remoteStream;
+                clearInterval(interval);
+              }
+            }, 500);
           }
-        });
-
-        call.on("close", () => {
-          setCallState("idle");
-          stopCallTimer();
-          if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
-          if (localVideoRef.current) localVideoRef.current.srcObject = null;
         });
 
         connRef.current = call;
@@ -277,22 +290,50 @@ export default function ChatDashboard() {
   const startVideoCall = async (remoteId: string) => {
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+
+      // Save local stream
       localStreamRef.current = stream;
-      if (localVideoRef.current) localVideoRef.current.srcObject = stream;
+
+      // Attach local preview (with fallback + play)
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream;
+        localVideoRef.current.play().catch((err) => console.warn("Local video play blocked:", err));
+      } else {
+        const interval = setInterval(() => {
+          if (localVideoRef.current) {
+            localVideoRef.current.srcObject = stream;
+            localVideoRef.current.play().catch((err) => console.warn("Local video play blocked:", err));
+            clearInterval(interval);
+          }
+        }, 500);
+      }
 
       if (!peer) throw new Error("Peer not initialized");
 
-      const call = peer.call(remoteId, stream, { metadata: { type: "video", callerId: myPeerId } });
+      // Initiate call
+      const call = peer.call(remoteId, stream, {
+        metadata: { type: "video", callerId: myPeerId },
+      });
 
+      // Attach remote stream
       call.on("stream", (remoteStream) => {
-        if (remoteVideoRef.current) remoteVideoRef.current.srcObject = remoteStream;
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = remoteStream;
+        } else {
+          const interval = setInterval(() => {
+            if (remoteVideoRef.current) {
+              remoteVideoRef.current.srcObject = remoteStream;
+              clearInterval(interval);
+            }
+          }, 500);
+        }
       });
 
       connRef.current = call;
       setCallState("video-connected");
       startCallTimer();
     } catch (err) {
-      console.error("Video call error:", err);
+      console.error("Failed to start video call", err);
       setCallState("idle");
     }
   };
@@ -489,19 +530,9 @@ export default function ChatDashboard() {
 
         {/* Video display (only for video calls) */}
         <div className="relative w-full max-w-md h-64 mb-8">
-          {myPeerId === callerId ? (
-            // Caller layout: me big, recipient small
-            <>
-              <video ref={localVideoRef} autoPlay muted playsInline className="w-full h-full object-contain rounded-lg bg-black local" />
-              <video ref={remoteVideoRef} autoPlay playsInline className="absolute bottom-2 right-2 w-24 h-20 object-cover rounded border-2 border-white bg-black remote" />
-            </>
-          ) : (
-            // Recipient layout: recipient big, me small
-            <>
-              <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-contain rounded-lg bg-black" />
-              <video ref={localVideoRef} autoPlay muted playsInline className="absolute bottom-2 right-2 w-24 h-20 object-cover rounded border-2 border-white bg-black" />
-            </>
-          )}
+          {/* Always: my video = local, other user = remote */}
+          <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-contain rounded-lg bg-black" />
+          <video ref={localVideoRef} autoPlay muted playsInline className="absolute bottom-2 right-2 w-24 h-20 object-cover rounded border-2 border-white bg-black" />
         </div>
         {/* Call controls */}
         <div className="flex items-center gap-6">

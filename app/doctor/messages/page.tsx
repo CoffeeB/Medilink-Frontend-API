@@ -118,29 +118,40 @@ export default function ChatDashboard() {
       const constraints = type === "video" ? { audio: true, video: true } : { audio: true, video: false };
 
       navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
-        // Always set my own stream to localVideoRef
+        // Save local stream
         localStreamRef.current = stream;
+
+        // Attach local preview (with fallback + play)
         if (localVideoRef.current) {
           localVideoRef.current.srcObject = stream;
+          localVideoRef.current.play().catch((err) => console.warn("Local video play blocked:", err));
+        } else {
+          const interval = setInterval(() => {
+            if (localVideoRef.current) {
+              localVideoRef.current.srcObject = stream;
+              localVideoRef.current.play().catch((err) => console.warn("Local video play blocked:", err));
+              clearInterval(interval);
+            }
+          }, 500);
         }
 
+        // Answer so caller can see me
         call.answer(stream);
 
-        // Set callerId for layout decisions
         setCallerId(metadataCallerId || call.peer);
 
-        // Always set the other user's stream to remoteVideoRef
+        // Attach remote stream
         call.on("stream", (remoteStream) => {
           if (remoteVideoRef.current) {
             remoteVideoRef.current.srcObject = remoteStream;
+          } else {
+            const interval = setInterval(() => {
+              if (remoteVideoRef.current) {
+                remoteVideoRef.current.srcObject = remoteStream;
+                clearInterval(interval);
+              }
+            }, 500);
           }
-        });
-
-        call.on("close", () => {
-          setCallState("idle");
-          stopCallTimer();
-          if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
-          if (localVideoRef.current) localVideoRef.current.srcObject = null;
         });
 
         connRef.current = call;
@@ -277,26 +288,54 @@ export default function ChatDashboard() {
   };
 
   const startVideoCall = async (remoteId: string) => {
-    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-    localStreamRef.current = stream;
-    if (localVideoRef.current) {
-      localVideoRef.current.srcObject = stream;
-    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
 
-    const call = peer.call(remoteId, stream, {
-      metadata: { type: "video", callerId: myPeerId },
-    });
+      // Save local stream
+      localStreamRef.current = stream;
 
-    // Always set other user's stream to remoteVideoRef
-    call.on("stream", (remoteStream) => {
-      if (remoteVideoRef.current) {
-        remoteVideoRef.current.srcObject = remoteStream;
+      // Attach local preview (with fallback + play)
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream;
+        localVideoRef.current.play().catch((err) => console.warn("Local video play blocked:", err));
+      } else {
+        const interval = setInterval(() => {
+          if (localVideoRef.current) {
+            localVideoRef.current.srcObject = stream;
+            localVideoRef.current.play().catch((err) => console.warn("Local video play blocked:", err));
+            clearInterval(interval);
+          }
+        }, 500);
       }
-    });
 
-    connRef.current = call;
-    setCallState("video-connected");
-    startCallTimer();
+      if (!peer) throw new Error("Peer not initialized");
+
+      // Initiate call
+      const call = peer.call(remoteId, stream, {
+        metadata: { type: "video", callerId: myPeerId },
+      });
+
+      // Attach remote stream
+      call.on("stream", (remoteStream) => {
+        if (remoteVideoRef.current) {
+          remoteVideoRef.current.srcObject = remoteStream;
+        } else {
+          const interval = setInterval(() => {
+            if (remoteVideoRef.current) {
+              remoteVideoRef.current.srcObject = remoteStream;
+              clearInterval(interval);
+            }
+          }, 500);
+        }
+      });
+
+      connRef.current = call;
+      setCallState("video-connected");
+      startCallTimer();
+    } catch (err) {
+      console.error("Failed to start video call", err);
+      setCallState("idle");
+    }
   };
 
   const endCall = () => {

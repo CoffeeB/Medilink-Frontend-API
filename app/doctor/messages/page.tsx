@@ -112,23 +112,25 @@ export default function ChatDashboard() {
       }
     });
 
+    // When answering a call
     newPeer.on("call", (call) => {
       const { type, callerId: metadataCallerId } = call.metadata || {};
       const constraints = type === "video" ? { audio: true, video: true } : { audio: true, video: false };
 
       navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
-        call.answer(stream);
+        // Always set my own stream to localVideoRef
         localStreamRef.current = stream;
-
-        // Receiver: set callerId based on who initiated the call
-        setCallerId(metadataCallerId || call.peer);
-
-        if (type === "video" && localVideoRef.current) {
+        if (localVideoRef.current) {
           localVideoRef.current.srcObject = stream;
         }
 
+        call.answer(stream);
+
+        // Set callerId for layout decisions
+        setCallerId(metadataCallerId || call.peer);
+
+        // Always set the other user's stream to remoteVideoRef
         call.on("stream", (remoteStream) => {
-          console.log("Remote stream from", metadataCallerId || call.peer);
           if (remoteVideoRef.current) {
             remoteVideoRef.current.srcObject = remoteStream;
           }
@@ -275,26 +277,26 @@ export default function ChatDashboard() {
   };
 
   const startVideoCall = async (remoteId: string) => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-      localStreamRef.current = stream;
-      if (localVideoRef.current) localVideoRef.current.srcObject = stream;
-
-      if (!peer) throw new Error("Peer not initialized");
-
-      const call = peer.call(remoteId, stream, { metadata: { type: "video", callerId: myPeerId } });
-
-      call.on("stream", (remoteStream) => {
-        if (remoteVideoRef.current) remoteVideoRef.current.srcObject = remoteStream;
-      });
-
-      connRef.current = call;
-      setCallState("video-connected");
-      startCallTimer();
-    } catch (err) {
-      console.error("Video call error:", err);
-      setCallState("idle");
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
+    localStreamRef.current = stream;
+    if (localVideoRef.current) {
+      localVideoRef.current.srcObject = stream;
     }
+
+    const call = peer.call(remoteId, stream, {
+      metadata: { type: "video", callerId: myPeerId },
+    });
+
+    // Always set other user's stream to remoteVideoRef
+    call.on("stream", (remoteStream) => {
+      if (remoteVideoRef.current) {
+        remoteVideoRef.current.srcObject = remoteStream;
+      }
+    });
+
+    connRef.current = call;
+    setCallState("video-connected");
+    startCallTimer();
   };
 
   const endCall = () => {
@@ -489,19 +491,9 @@ export default function ChatDashboard() {
 
         {/* Video display (only for video calls) */}
         <div className="relative w-full max-w-md h-64 mb-8">
-          {myPeerId === callerId ? (
-            // Caller layout: me big, recipient small
-            <>
-              <video ref={localVideoRef} autoPlay muted playsInline className="w-full h-full object-contain rounded-lg bg-black" />
-              <video ref={remoteVideoRef} autoPlay playsInline className="absolute bottom-2 right-2 w-24 h-20 object-cover rounded border-2 border-white bg-black" />
-            </>
-          ) : (
-            // Recipient layout: recipient big, me small
-            <>
-              <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-contain rounded-lg bg-black" />
-              <video ref={localVideoRef} autoPlay muted playsInline className="absolute bottom-2 right-2 w-24 h-20 object-cover rounded border-2 border-white bg-black" />
-            </>
-          )}
+          {/* Always: my video = local, other user = remote */}
+          <video ref={remoteVideoRef} autoPlay playsInline className="w-full h-full object-contain rounded-lg bg-black" />
+          <video ref={localVideoRef} autoPlay muted playsInline className="absolute bottom-2 right-2 w-24 h-20 object-cover rounded border-2 border-white bg-black" />
         </div>
         {/* Call controls */}
         <div className="flex items-center gap-6">

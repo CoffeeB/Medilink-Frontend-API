@@ -492,8 +492,8 @@ export default function ChatDashboard() {
           {myPeerId === callerId ? (
             // Caller layout: me big, recipient small
             <>
-              <video ref={localVideoRef} autoPlay muted playsInline className="w-full h-full object-contain rounded-lg bg-black" />
-              <video ref={remoteVideoRef} autoPlay playsInline className="absolute bottom-2 right-2 w-24 h-20 object-cover rounded border-2 border-white bg-black" />
+              <video ref={localVideoRef} autoPlay muted playsInline className="w-full h-full object-contain rounded-lg bg-black local" />
+              <video ref={remoteVideoRef} autoPlay playsInline className="absolute bottom-2 right-2 w-24 h-20 object-cover rounded border-2 border-white bg-black remote" />
             </>
           ) : (
             // Recipient layout: recipient big, me small

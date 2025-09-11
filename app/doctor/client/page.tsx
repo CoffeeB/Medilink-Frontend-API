@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import SignatureCanvas from "react-signature-canvas";
 import { newForm } from "@/hooks/form";
+import { clientAppointments } from "@/hooks/appointments";
 
 type ClientStatus = "Submitted" | "Pending" | "Review";
 
@@ -33,6 +34,7 @@ export default function ClientDiagnosis() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [startDate, setStartDate] = useState("");
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [diagnoses, setDiagnoses] = useState(null);
   const [endDate, setEndDate] = useState("");
   const [open, setOpen] = useState(false);
   const [formMode, setFormMode] = useState<"view" | "edit">("view");
@@ -48,33 +50,46 @@ export default function ClientDiagnosis() {
     signature: "",
   });
 
-  const diagnoses: Diagnosis[] = [
-    {
-      id: "D001",
-      date: "2024-01-15",
-      name: "John Doe",
-      sex: "male",
-      time: "10:00 AM",
-      address: "123 Main St, City, Country",
-      assessment: "Initial consultation and assessment completed.",
-      // signature: "data:image/png;base64,...",
-      status: "Submitted",
-    },
-    {
-      id: "D002",
-      date: "2023-12-01",
-      name: "Mary Johnson",
-      status: "Pending",
-    },
-    {
-      id: "D003",
-      date: "2023-10-15",
-      name: "Alex Lee",
-      status: "Review",
-    },
-  ];
+  // const diagnoses: Diagnosis[] = [
+  //   {
+  //     id: "D001",
+  //     date: "2024-01-15",
+  //     name: "John Doe",
+  //     sex: "male",
+  //     time: "10:00 AM",
+  //     address: "123 Main St, City, Country",
+  //     assessment: "Initial consultation and assessment completed.",
+  //     // signature: "data:image/png;base64,...",
+  //     status: "Submitted",
+  //   },
+  //   {
+  //     id: "D002",
+  //     date: "2023-12-01",
+  //     name: "Mary Johnson",
+  //     status: "Pending",
+  //   },
+  //   {
+  //     id: "D003",
+  //     date: "2023-10-15",
+  //     name: "Alex Lee",
+  //     status: "Review",
+  //   },
+  // ];
 
-  const filteredDiagnoses = diagnoses.filter((diagnosis) => {
+  useEffect(() => {
+    const getClientAppointments = async () => {
+      try {
+        const response = await clientAppointments();
+        setDiagnoses(response);
+      } catch (error) {
+        console.log("error getting users", error);
+      }
+    };
+
+    getClientAppointments();
+  }, []);
+
+  const filteredDiagnoses = diagnoses?.filter((diagnosis) => {
     const matchesSearch = diagnosis.name.toLowerCase().includes(searchTerm.toLowerCase()) || diagnosis.status.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesDateRange = (!startDate || diagnosis.date >= startDate) && (!endDate || diagnosis.date <= endDate);
     return matchesSearch && matchesDateRange;
@@ -155,7 +170,7 @@ export default function ClientDiagnosis() {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs sm:text-sm text-muted-foreground">
-                Showing {filteredDiagnoses.length} of {diagnoses.length} clients
+                Showing {filteredDiagnoses?.length} of {diagnoses?.length} clients
               </span>
             </div>
           </div>
@@ -170,14 +185,14 @@ export default function ClientDiagnosis() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredDiagnoses.length === 0 ? (
+                {filteredDiagnoses?.length === 0 ? (
                   <TableRow>
                     <TableCell colSpan={5} className="text-center py-6 text-sm sm:text-base">
                       No Client found
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredDiagnoses.map((diagnosis) => (
+                  filteredDiagnoses?.map((diagnosis) => (
                     <TableRow key={diagnosis.id} className="cursor-pointer hover:bg-accent" onClick={() => handleRowClick(diagnosis)}>
                       <TableCell className="text-xs sm:text-sm">{new Date(diagnosis.date).toLocaleDateString()}</TableCell>
                       <TableCell className="text-xs sm:text-sm">{diagnosis.name}</TableCell>

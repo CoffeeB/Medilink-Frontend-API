@@ -25,7 +25,6 @@ const DoctorHeader = () => {
 
   const [selectedNotification, setSelectedNotification] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const router = useRouter();
 
   const handleItemClick = async (notification: any) => {
     if (notification.link) {
@@ -76,13 +75,13 @@ const DoctorHeader = () => {
 
   const handleLogout = async () => {
     try {
-      localStorage.removeItem("token")  
+      localStorage.removeItem("token");
       // Redirect to login pag
-     router.push("/doctor/login")
+      router.push("/doctor/login");
     } catch (error) {
-      console.error("Logout failed", error)
+      console.error("Logout failed", error);
     }
-  }
+  };
 
   return (
     <header className="bg-white border-b">
@@ -142,10 +141,9 @@ const DoctorHeader = () => {
                 </Link>
                 <DropdownMenuSeparator />
                 <Link href="/doctor/login" onClick={logout}>
-                  <DropdownMenuItem 
-                    className="cursor-pointer"
-                    onClick={handleLogout}
-                    >Log out</DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer" onClick={handleLogout}>
+                    Log out
+                  </DropdownMenuItem>
                 </Link>
               </DropdownMenuContent>
             </DropdownMenu>

@@ -25,6 +25,17 @@ interface Contact {
   isGroup?: boolean;
 }
 
+type CallState =
+  | "idle"
+  | "audio-calling" // caller dialing
+  | "video-calling" // caller dialing
+  | "ringing" // recipient sees incoming call
+  | "audio-connected" // call established
+  | "video-connected" // call established
+  | "ended" // after hangup
+  | "unavailable" // peer not reachable
+  | "no-answer"; // timed out after 2min
+
 // Simple emoji data
 const emojis = ["😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇", "🙂", "🙃", "😉", "😌", "😍", "🥰", "😘", "😗", "😙", "😚", "😋", "😛", "😝", "😜", "🤪", "🤨", "🧐", "🤓", "😎", "🤩", "🥳", "😏", "😒", "😞", "😔", "😟", "😕", "🙁", "☹️", "😣", "😖", "😫", "😩", "🥺", "😢", "😭", "😤", "😠", "😡", "🤬", "🤯", "😳", "🥵", "🥶", "😱", "😨", "😰", "😥", "😓", "🤗", "🤔", "🤭", "🤫", "🤥", "😶", "😐", "😑", "😬", "🙄", "😯", "😦", "😧", "😮", "😲", "🥱", "😴", "🤤", "😪", "😵", "🤐", "🥴", "🤢", "🤮", "🤧", "😷", "🤒", "🤕", "🤑", "🤠"];
 
@@ -53,7 +64,7 @@ export default function ChatDashboard() {
   const [conversationId, setConversationId] = useState("");
 
   // Call states
-  const [callState, setCallState] = useState("idle"); // idle, audio-calling, audio-connected, video-calling, video-connected
+  const [callState, setCallState] = useState<CallState>("idle"); // idle, audio-calling, audio-connected, video-calling, video-connected
   const [callDuration, setCallDuration] = useState(0);
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
@@ -72,6 +83,10 @@ export default function ChatDashboard() {
   const callTimerRef = useRef<NodeJS.Timeout | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const incomingCallRef = useRef<any>(null);
+  const unansweredTimeoutRef = useRef<any>(null);
+  const dialToneRef = useRef<HTMLAudioElement | null>(null);
+  const ringToneRef = useRef<HTMLAudioElement | null>(null);
 
   // Responsive handling
   useEffect(() => {
@@ -101,7 +116,9 @@ export default function ChatDashboard() {
 
   // PeerJs Initialization
   useEffect(() => {
-    const newPeer = new Peer();
+    if (!loggedInUser) return; // wait until we have the user
+
+    const newPeer = new Peer(loggedInUser.id);
 
     newPeer.on("open", async (id) => {
       try {
@@ -112,60 +129,131 @@ export default function ChatDashboard() {
       }
     });
 
-    // When answering a call
+    // When an incoming call arrives
     newPeer.on("call", (call) => {
       const { type, callerId: metadataCallerId } = call.metadata || {};
-      const constraints = type === "video" ? { audio: true, video: true } : { audio: true, video: false };
 
-      navigator.mediaDevices.getUserMedia(constraints).then((stream) => {
-        // Save local stream
-        localStreamRef.current = stream;
+      // Store the call reference so we can accept/decline later
+      incomingCallRef.current = call;
+      setCallerId(metadataCallerId || call.peer);
+      setCallState("ringing");
 
-        // Attach local preview (with fallback + play)
-        if (localVideoRef.current) {
-          localVideoRef.current.srcObject = stream;
-          localVideoRef.current.play().catch((err) => console.warn("Local video play blocked:", err));
-        } else {
-          const interval = setInterval(() => {
-            if (localVideoRef.current) {
-              localVideoRef.current.srcObject = stream;
-              localVideoRef.current.play().catch((err) => console.warn("Local video play blocked:", err));
-              clearInterval(interval);
-            }
-          }, 500);
-        }
-
-        // Answer so caller can see me
-        call.answer(stream);
-
-        setCallerId(metadataCallerId || call.peer);
-
-        // Attach remote stream
-        call.on("stream", (remoteStream) => {
-          if (remoteVideoRef.current) {
-            remoteVideoRef.current.srcObject = remoteStream;
-          } else {
-            const interval = setInterval(() => {
-              if (remoteVideoRef.current) {
-                remoteVideoRef.current.srcObject = remoteStream;
-                clearInterval(interval);
-              }
-            }, 500);
-          }
-        });
-
-        connRef.current = call;
-        setCallState(type === "video" ? "video-connected" : "audio-connected");
-        startCallTimer();
+      // 👉 handle if caller hangs up before I accept
+      call.on("close", () => {
+        console.log("Caller ended before I accepted");
+        setCallState("ended");
+        stopCallTimer();
       });
+
+      call.on("error", (err) => {
+        console.error("Call error (callee side):", err);
+        setCallState("unavailable");
+        stopCallTimer();
+      });
+
+      //  play ringtone here
+      if (ringToneRef.current) {
+        ringToneRef.current.play().catch((err: any) => {
+          console.error("Failed to play ringtone:", err);
+        });
+      }
+
+      // if (dialToneRef.current) {
+      //   dialToneRef.current.play().catch((err: any) => {
+      //     console.error("Failed to play dial tone:", err);
+      //   });
+      // }
     });
 
     setPeer(newPeer);
 
+    newPeer.on("error", (err) => {
+      console.error("Peer error:", err);
+      setCallState("unavailable");
+    });
+
     return () => {
       newPeer.destroy();
     };
+  }, [loggedInUser]);
+
+  // Initialize ringtone once
+  useEffect(() => {
+    dialToneRef.current = new Audio("/sounds/dialtone.wav");
+    dialToneRef.current.loop = true;
+
+    ringToneRef.current = new Audio("/sounds/ringtone.wav");
+    ringToneRef.current.loop = true;
   }, []);
+
+  useEffect(() => {
+    const unlock = () => {
+      if (ringToneRef.current) {
+        ringToneRef.current
+          .play()
+          .then(() => {
+            ringToneRef.current!.pause();
+            ringToneRef.current!.currentTime = 0;
+            document.removeEventListener("click", unlock);
+          })
+          .catch((err) => console.warn("Unlock failed:", err));
+      }
+    };
+
+    document.addEventListener("click", unlock);
+    return () => document.removeEventListener("click", unlock);
+  }, []);
+
+  // call state handler
+  useEffect(() => {
+    let timeout: NodeJS.Timeout;
+
+    if (callState === "audio-calling" || callState === "video-calling" || callState === "ringing") {
+      timeout = setTimeout(() => {
+        setCallState("no-answer");
+        endCall();
+      }, 120000); // 2 mins
+    }
+
+    return () => clearTimeout(timeout);
+  }, [callState]);
+
+  useEffect(() => {
+    let timeout: NodeJS.Timeout;
+
+    if (callState === "ended") {
+      timeout = setTimeout(() => {
+        setCallState("idle");
+      }, 3000); // 3 seconds
+    }
+
+    return () => clearTimeout(timeout);
+  }, [callState]);
+
+  useEffect(() => {
+    if ((callState === "audio-calling" || callState === "video-calling") && callerId === loggedInUser?.id) {
+      // Caller hears dial tone
+      dialToneRef.current?.play().catch(() => {});
+    } else {
+      dialToneRef.current?.pause();
+      dialToneRef.current!.currentTime = 0;
+    }
+
+    if (callState === "ringing" && callerId !== loggedInUser?.id) {
+      // Callee hears ringtone
+      ringToneRef.current?.play().catch(() => {});
+    } else {
+      ringToneRef.current?.pause();
+      ringToneRef.current!.currentTime = 0;
+    }
+
+    if (callState === "ended" || callState === "idle" || callState === "no-answer") {
+      dialToneRef.current?.pause();
+      ringToneRef.current?.pause();
+      if (dialToneRef.current) dialToneRef.current.currentTime = 0;
+      if (ringToneRef.current) ringToneRef.current.currentTime = 0;
+    }
+  }, [callState, callerId, loggedInUser]);
 
   const handleSelectContact = async (contact: Contact) => {
     // Set the active/open chat
@@ -266,6 +354,14 @@ export default function ChatDashboard() {
   };
 
   const startAudioCall = async (remoteId: string) => {
+    // 🔊 Play dial tone immediately on button click
+    if (dialToneRef.current) {
+      dialToneRef.current.currentTime = 0;
+      await dialToneRef.current.play().catch((err) => {
+        console.warn("Dial tone blocked:", err);
+      });
+    }
+
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: false });
       localStreamRef.current = stream;
@@ -274,91 +370,195 @@ export default function ChatDashboard() {
 
       const call = peer.call(remoteId, stream, { metadata: { type: "audio", callerId: myPeerId } });
 
+      // Remote stream
       call.on("stream", (remoteStream) => {
         if (remoteVideoRef.current) remoteVideoRef.current.srcObject = remoteStream;
+        setCallState("audio-connected");
+        startCallTimer();
+      });
+
+      // Handle close
+      call.on("close", () => {
+        setCallState("ended");
+        endCall();
+      });
+
+      // Handle error
+      call.on("error", () => {
+        setCallState("unavailable");
+        endCall();
       });
 
       connRef.current = call;
-      setCallState("audio-connected");
-      startCallTimer();
+      setCallState("audio-calling");
+
+      // Timeout if unanswered (2 min)
+      unansweredTimeoutRef.current = setTimeout(() => {
+        if (callState === "audio-calling") {
+          setCallState("no-answer");
+          endCall(true);
+        }
+      }, 60000);
     } catch (err) {
       console.error("Audio call error:", err);
       setCallState("idle");
     }
   };
 
+  const playRingtone = () => {
+    if (ringToneRef.current) {
+      ringToneRef.current.currentTime = 0;
+      ringToneRef.current.play().catch(() => {});
+    }
+  };
+
+  const stopDialtone = () => {
+    if (dialToneRef.current) {
+      dialToneRef.current.pause();
+      dialToneRef.current.currentTime = 0;
+    }
+  };
+
+  const stopRingtone = () => {
+    if (ringToneRef.current) {
+      ringToneRef.current.pause();
+      ringToneRef.current.currentTime = 0;
+    }
+  };
+
   const startVideoCall = async (remoteId: string) => {
+    // 🔊 Play dial tone immediately on button click
+    if (dialToneRef.current) {
+      dialToneRef.current.currentTime = 0;
+      await dialToneRef.current.play().catch((err) => {
+        console.warn("Dial tone blocked:", err);
+      });
+    }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true, video: true });
-
-      // Save local stream
       localStreamRef.current = stream;
 
-      // Attach local preview (with fallback + play)
+      // Local preview
       if (localVideoRef.current) {
         localVideoRef.current.srcObject = stream;
         localVideoRef.current.play().catch((err) => console.warn("Local video play blocked:", err));
-      } else {
-        const interval = setInterval(() => {
-          if (localVideoRef.current) {
-            localVideoRef.current.srcObject = stream;
-            localVideoRef.current.play().catch((err) => console.warn("Local video play blocked:", err));
-            clearInterval(interval);
-          }
-        }, 500);
       }
 
       if (!peer) throw new Error("Peer not initialized");
 
-      // Initiate call
-      const call = peer.call(remoteId, stream, {
-        metadata: { type: "video", callerId: myPeerId },
+      const call = peer.call(remoteId, stream, { metadata: { type: "video", callerId: myPeerId } });
+
+      // Remote stream
+      call.on("stream", (remoteStream) => {
+        if (remoteVideoRef.current) remoteVideoRef.current.srcObject = remoteStream;
+        setCallState("video-connected");
+        startCallTimer();
       });
 
-      // Attach remote stream
-      call.on("stream", (remoteStream) => {
-        if (remoteVideoRef.current) {
-          remoteVideoRef.current.srcObject = remoteStream;
-        } else {
-          const interval = setInterval(() => {
-            if (remoteVideoRef.current) {
-              remoteVideoRef.current.srcObject = remoteStream;
-              clearInterval(interval);
-            }
-          }, 500);
-        }
+      // Handle close
+      call.on("close", () => {
+        setCallState("ended");
+        endCall(true);
+      });
+
+      // Handle error
+      call.on("error", () => {
+        setCallState("unavailable");
+        endCall(true);
       });
 
       connRef.current = call;
-      setCallState("video-connected");
-      startCallTimer();
+      setCallState("video-calling");
+
+      // Timeout if unanswered (2 min)
+      unansweredTimeoutRef.current = setTimeout(() => {
+        if (callState === "video-calling") {
+          setCallState("no-answer");
+          endCall(true);
+        }
+      }, 60000);
     } catch (err) {
-      console.error("Failed to start video call", err);
+      console.error("Video call error:", err);
       setCallState("idle");
     }
   };
 
-  const endCall = () => {
-    setCallState("idle");
+  const acceptCall = async () => {
+    if (!incomingCallRef.current) return;
+
+    const call = incomingCallRef.current;
+    const { type } = call.metadata || {};
+    const constraints = type === "video" ? { audio: true, video: true } : { audio: true, video: false };
+
+    stopRingtone();
+
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia(constraints);
+
+      // Save + show my local video/audio
+      localStreamRef.current = stream;
+      if (localVideoRef.current) {
+        localVideoRef.current.srcObject = stream;
+        localVideoRef.current.play().catch((err) => console.warn("Local play blocked:", err));
+      }
+
+      // Accept the call
+      call.answer(stream);
+
+      // Handle remote stream
+      call.on("stream", (remoteStream: MediaStream) => {
+        remoteVideoRef.current!.srcObject = remoteStream;
+      });
+
+      connRef.current = call;
+      setCallState(type === "video" ? "video-connected" : "audio-connected");
+      startCallTimer();
+    } catch (err) {
+      console.error("Error accepting call:", err);
+      setCallState("idle");
+    }
+  };
+
+  const declineCall = () => {
+    // Decline incoming call before answering
+    if (incomingCallRef.current) {
+      incomingCallRef.current.close(); // tells caller "call rejected"
+      incomingCallRef.current = null;
+    }
+
+    stopDialtone();
+    endCall(true); // ensures cleanup + state reset
+  };
+
+  const endCall = (forceEnded = false) => {
+    setCallState(forceEnded ? "ended" : "idle");
     stopCallTimer();
     setIsMuted(false);
     setIsVideoOff(false);
 
+    // Stop local media
     if (localStreamRef.current) {
-      localStreamRef.current.getTracks().forEach((track) => track.stop());
+      localStreamRef.current.getTracks().forEach((t) => t.stop());
       localStreamRef.current = null;
     }
 
+    // Reset video refs
     if (localVideoRef.current) localVideoRef.current.srcObject = null;
     if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
 
+    // Close peer connections
     if (connRef.current) {
-      connRef.current.close(); // triggers call.on("close") for the other peer
+      connRef.current.close(); // triggers `call.on("close")` on the other peer
       connRef.current = null;
     }
 
-    // OPTIONAL: notify backend/socket so other user also calls endCall()
-    // socket.emit("end-call", { conversationId });
+    if (incomingCallRef.current) {
+      incomingCallRef.current.close(); // if call was ringing but never answered
+      incomingCallRef.current = null;
+    }
+
+    stopRingtone();
+    stopDialtone();
   };
 
   const toggleMute = () => {
@@ -520,11 +720,16 @@ export default function ChatDashboard() {
           <h2 className="text-2xl font-semibold mb-2">
             {selectedContact?.firstname} {selectedContact?.lastname}
           </h2>
-          <p className="text-lg">
-            {callState === "audio-calling" && "Calling..."}
-            {callState === "video-calling" && "Calling..."}
+          <h3>{callerId}</h3>
+          {callState === "audio-calling" || (callState === "video-calling" && <h3>Calling</h3>)}
+          {callState === "audio-connected" || (callState === "video-connected" && <h3>In call</h3>)}
+          {callState === "ended" && <h3>Call disconnected</h3>}
+          <p className="text-lg text-white">
+            {callState === "ringing" && "Incoming call…"}
             {callState === "audio-connected" && `Audio call • ${formatCallDuration(callDuration)}`}
             {callState === "video-connected" && formatCallDuration(callDuration)}
+            {callState === "no-answer" && "Recipient did not pick up"}
+            {callState === "unavailable" && "Recipient unavailable"}
           </p>
         </div>
 
@@ -535,21 +740,34 @@ export default function ChatDashboard() {
           <video ref={localVideoRef} autoPlay muted playsInline className="absolute bottom-2 right-2 w-24 h-20 object-cover rounded border-2 border-white bg-black" />
         </div>
         {/* Call controls */}
-        <div className="flex items-center gap-6">
-          <button onClick={toggleMute} className={`p-4 rounded-full ${isMuted ? "bg-red-500" : "bg-gray-600"} hover:bg-opacity-80 transition-colors`}>
-            {isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
-          </button>
-
-          {(callState === "video-calling" || callState === "video-connected") && (
-            <button onClick={toggleVideo} className={`p-4 rounded-full ${isVideoOff ? "bg-red-500" : "bg-gray-600"} hover:bg-opacity-80 transition-colors`}>
-              {isVideoOff ? <VideoOff className="w-6 h-6" /> : <Video className="w-6 h-6" />}
+        {callState !== "ringing" && (
+          <div className="flex items-center gap-6">
+            <button onClick={toggleMute} className={`p-4 rounded-full ${isMuted ? "bg-red-500" : "bg-gray-600"} hover:bg-opacity-80 transition-colors`}>
+              {isMuted ? <MicOff className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
             </button>
-          )}
 
-          <button onClick={endCall} className="p-4 rounded-full bg-red-500 hover:bg-red-600 transition-colors">
-            <PhoneOff className="w-6 h-6" />
-          </button>
-        </div>
+            {(callState === "video-calling" || callState === "video-connected") && (
+              <button onClick={toggleVideo} className={`p-4 rounded-full ${isVideoOff ? "bg-red-500" : "bg-gray-600"} hover:bg-opacity-80 transition-colors`}>
+                {isVideoOff ? <VideoOff className="w-6 h-6" /> : <Video className="w-6 h-6" />}
+              </button>
+            )}
+
+            <button onClick={endCall} className="p-4 rounded-full bg-red-500 hover:bg-red-600 transition-colors">
+              <PhoneOff className="w-6 h-6" />
+            </button>
+          </div>
+        )}
+
+        {callState === "ringing" && (
+          <div className="flex items-center gap-6">
+            <button onClick={acceptCall} className="p-4 rounded-full bg-green-500 hover:bg-green-600 transition-colors">
+              <Phone className="w-6 h-6" />
+            </button>
+            <button onClick={declineCall} className="p-4 rounded-full bg-red-500 hover:bg-red-600 transition-colors">
+              <PhoneOff className="w-6 h-6" />
+            </button>
+          </div>
+        )}
       </div>
     );
   };

@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import SignatureCanvas from "react-signature-canvas";
 import { newForm } from "@/hooks/form";
-import { clientAppointments } from "@/hooks/appointments";
+import { clientAppointments, editClientAppointment } from "@/hooks/appointments";
 
 type ClientStatus = "Submitted" | "Pending" | "Review";
 
@@ -50,32 +50,6 @@ export default function ClientDiagnosis() {
     signature: "",
   });
 
-  // const diagnoses: Diagnosis[] = [
-  //   {
-  //     id: "D001",
-  //     date: "2024-01-15",
-  //     name: "John Doe",
-  //     sex: "male",
-  //     time: "10:00 AM",
-  //     address: "123 Main St, City, Country",
-  //     assessment: "Initial consultation and assessment completed.",
-  //     // signature: "data:image/png;base64,...",
-  //     status: "Submitted",
-  //   },
-  //   {
-  //     id: "D002",
-  //     date: "2023-12-01",
-  //     name: "Mary Johnson",
-  //     status: "Pending",
-  //   },
-  //   {
-  //     id: "D003",
-  //     date: "2023-10-15",
-  //     name: "Alex Lee",
-  //     status: "Review",
-  //   },
-  // ];
-
   useEffect(() => {
     const getClientAppointments = async () => {
       try {
@@ -89,15 +63,15 @@ export default function ClientDiagnosis() {
     getClientAppointments();
   }, []);
 
-  const filteredDiagnoses = diagnoses?.filter((diagnosis) => {
-    const matchesSearch = diagnosis.name.toLowerCase().includes(searchTerm.toLowerCase()) || diagnosis.status.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDateRange = (!startDate || diagnosis.date >= startDate) && (!endDate || diagnosis.date <= endDate);
+  const filteredDiagnoses = diagnoses?.filter((diagnosis: any) => {
+    const matchesSearch = diagnosis?.form?.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) || diagnosis?.form?.status?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesDateRange = (!startDate || diagnosis?.form?.preferredDate >= startDate) && (!endDate || diagnosis?.form?.preferredDate <= endDate);
     return matchesSearch && matchesDateRange;
   });
 
-  const [selected, setSelected] = useState<Diagnosis | null>(null);
+  const [selected, setSelected] = useState(null);
   const [assessment, setAssessment] = useState("");
-  const [statusSel, setStatusSel] = useState<ClientStatus>("Pending");
+  const [statusSel, setStatusSel] = useState("pending");
   const sigRef = useRef<SignatureCanvas | null>(null);
 
   const handleRowClick = (d: Diagnosis) => {
@@ -109,20 +83,41 @@ export default function ClientDiagnosis() {
     setTimeout(() => sigRef.current?.clear(), 0);
   };
 
-  const handleConfirm = () => {
+  const handleConfirm = async (e: React.FormEvent) => {
+    e.preventDefault();
     if (!selected) return;
+
     const doctorSignature = sigRef.current && !sigRef.current.isEmpty() ? sigRef.current.getCanvas().toDataURL("image/png") : null;
 
-    console.log({
-      id: selected.id,
+    const payload = {
+      // keep appointment id so backend knows which to update
+      id: selected?.form?._id,
+
+      // doctor-related data
       assessment,
       status: statusSel,
-      doctorSignature,
-    });
-    setOpen(false);
+      signature: doctorSignature,
+
+      // include all form fields from patient appointment
+      clientName: selected?.form?.clientName,
+      sex: selected?.form?.sex,
+      age: selected?.form?.age,
+      preferredDate: selected?.form?.preferredDate,
+      preferredTime: selected?.form?.preferredTime,
+      description: selected?.form?.description,
+      address: selected?.form?.address,
+    };
+
+    try {
+      console.log("Confirming appointment with full payload:", payload);
+      await editClientAppointment(payload);
+      setOpen(false);
+    } catch (error) {
+      console.error("Error updating appointment:", error);
+    }
   };
 
-  const canEdit = selected && (selected.status === "Pending" || selected.status === "Review");
+  const canEdit = selected && (selected?.form?.status === "pending" || selected?.form?.status === "review");
 
   function handleAddAppointment() {
     setForm({
@@ -141,13 +136,31 @@ export default function ClientDiagnosis() {
     setTimeout(() => sigRef.current?.clear(), 0);
   }
 
-  const handleSubmit = async () => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault(); // stop full page refresh
+
     try {
+      console.log("Submitting form:", form);
+
       const response = await newForm(form);
-      console.log(form);
-      // setEvents((prev) => (Array.isArray(prev) ? [...prev, newEvent] : [newEvent]));
+
+      // optionally close modal
+      setOpen(false);
+
+      // reset form
+      setForm({
+        id: "",
+        clientName: "",
+        sex: "",
+        age: "",
+        preferredDate: "",
+        preferredTime: "",
+        description: "",
+        address: "",
+        signature: "",
+      });
     } catch (error) {
-      console.log("Error:- ", error);
+      console.log("Error submitting form:", error);
     }
   };
 
@@ -170,7 +183,7 @@ export default function ClientDiagnosis() {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs sm:text-sm text-muted-foreground">
-                Showing {filteredDiagnoses?.length} of {diagnoses?.length} clients
+                Showing {filteredDiagnoses?.length} of {diagnoses?.form?.length} clients
               </span>
             </div>
           </div>
@@ -192,12 +205,12 @@ export default function ClientDiagnosis() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredDiagnoses?.map((diagnosis) => (
+                  filteredDiagnoses?.map((diagnosis: any) => (
                     <TableRow key={diagnosis.id} className="cursor-pointer hover:bg-accent" onClick={() => handleRowClick(diagnosis)}>
-                      <TableCell className="text-xs sm:text-sm">{new Date(diagnosis.date).toLocaleDateString()}</TableCell>
-                      <TableCell className="text-xs sm:text-sm">{diagnosis.name}</TableCell>
+                      <TableCell className="text-xs sm:text-sm">{new Date(diagnosis?.form?.preferredDate).toLocaleDateString()}</TableCell>
+                      <TableCell className="text-xs sm:text-sm">{diagnosis?.form?.clientName}</TableCell>
                       <TableCell>
-                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${diagnosis.status === "Submitted" ? "bg-green-100 text-green-800" : diagnosis.status === "Pending" ? "bg-yellow-100 text-yellow-800" : "bg-blue-100 text-blue-800"}`}>{diagnosis.status}</span>
+                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${diagnosis?.form?.status === "Submitted" ? "bg-green-100 text-green-800" : diagnosis?.form?.status === "Pending" ? "bg-yellow-100 text-yellow-800" : "bg-blue-100 text-blue-800"}`}>{diagnosis?.form?.status}</span>
                       </TableCell>
                     </TableRow>
                   ))
@@ -218,35 +231,35 @@ export default function ClientDiagnosis() {
 
               <div className="space-y-3">
                 <p className="text-sm sm:text-base">
-                  <b>Client:</b> {selected.name}
+                  <b>Client:</b> {selected?.form?.clientName}
                 </p>
                 <p className="text-sm sm:text-base">
-                  <b>Sex:</b> {selected.sex ?? "—"}
+                  <b>Sex:</b> {selected?.form?.sex ?? "—"}
                 </p>
                 <p className="text-sm sm:text-base">
-                  <b>Date:</b> {selected.date}
+                  <b>Date:</b> {selected?.form?.preferredDate}
                 </p>
                 <p className="text-sm sm:text-base">
-                  <b>Time:</b> {selected.time ?? "—"}
+                  <b>Time:</b> {selected?.form?.preferredTime ?? "—"}
                 </p>
                 <p className="text-sm sm:text-base">
-                  <b>Address:</b> {selected.address ?? "—"}
+                  <b>Address:</b> {selected?.form?.address ?? "—"}
                 </p>
-                {selected.status === "Submitted" && (
+                {selected?.form?.status === "submitted" && (
                   <>
                     <p className="text-sm sm:text-base">
-                      <b>Assessment Summary:</b> {selected.assessment ?? "—"}
+                      <b>Assessment Summary:</b> {selected?.form?.assessment ?? "—"}
                     </p>
                     <p className="text-sm sm:text-base">
-                      <b>Status:</b> {selected.status}
+                      <b>Status:</b> {selected?.form?.status}
                     </p>
                   </>
                 )}
-                {selected.signature ? (
+                {selected?.form?.signature ? (
                   <div>
                     <b className="text-sm sm:text-base">Client Signature:</b>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={selected.signature} alt="Client Signature" className="mt-2 border rounded-md w-32 sm:w-40" />
+                    <img src={selected?.form?.signature} alt="Client Signature" className="mt-2 border rounded-md w-32 sm:w-40" />
                   </div>
                 ) : (
                   <p className="text-xs sm:text-sm text-muted-foreground">
@@ -264,9 +277,9 @@ export default function ClientDiagnosis() {
 
                       <div>
                         <Label className="mb-1 block text-xs sm:text-sm">Status</Label>
-                        <Select value={statusSel} onValueChange={(v) => setStatusSel(v as ClientStatus)}>
-                          <SelectTrigger className="text-sm sm:text-base">
-                            <SelectValue placeholder="Select status" />
+                        <Select defaultValue={selected?.form?.status || ""} value={statusSel} onValueChange={(v) => setStatusSel(v as ClientStatus)}>
+                          <SelectTrigger className="text-sm sm:text-base text-black">
+                            <SelectValue className="text-black" placeholder="Select status" />
                           </SelectTrigger>
                           <SelectContent className="bg-white shadow-md border rounded-md">
                             <SelectItem value="Pending">Pending</SelectItem>

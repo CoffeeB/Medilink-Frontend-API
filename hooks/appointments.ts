@@ -13,6 +13,17 @@ export const newAppointment = async (formId: any, date: any) => {
   return response.data;
 };
 
+export const editClientAppointment = async (form: any) => {
+  const token = Cookies.get("token");
+  if (!token) {
+    throw new Error("Token is required");
+  }
+  const response = await axiosInstance.post("/api/appointments/doctor", {
+    form,
+  });
+  return response.data;
+};
+
 export const seeAllAppointments = async (doctor: boolean, marketer: boolean) => {
   const token = Cookies.get("token");
   if (!token) {

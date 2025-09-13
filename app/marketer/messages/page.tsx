@@ -212,7 +212,7 @@ export default function ChatDashboard() {
       timeout = setTimeout(() => {
         setCallState("no-answer");
         endCall();
-      }, 120000); // 2 mins
+      }, 60000); // 1 mins
     }
 
     return () => clearTimeout(timeout);

@@ -39,7 +39,6 @@ export default function ClientDiagnosis() {
   const [open, setOpen] = useState(false);
   const [formMode, setFormMode] = useState<"view" | "edit">("view");
   const [form, setForm] = useState<any>({
-    id: "",
     clientName: "",
     sex: "",
     age: "",
@@ -206,7 +205,7 @@ export default function ClientDiagnosis() {
                   </TableRow>
                 ) : (
                   filteredDiagnoses?.map((diagnosis: any) => (
-                    <TableRow key={diagnosis.id} className="cursor-pointer hover:bg-accent" onClick={() => handleRowClick(diagnosis)}>
+                    <TableRow key={diagnosis?.form?._id} className="cursor-pointer hover:bg-accent" onClick={() => handleRowClick(diagnosis)}>
                       <TableCell className="text-xs sm:text-sm">{new Date(diagnosis?.form?.preferredDate).toLocaleDateString()}</TableCell>
                       <TableCell className="text-xs sm:text-sm">{diagnosis?.form?.clientName}</TableCell>
                       <TableCell>

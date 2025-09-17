@@ -22,7 +22,6 @@ const DoctorHeader = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [notifications, setNotifications] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
-
   const [selectedNotification, setSelectedNotification] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
 

@@ -34,7 +34,7 @@ export default function ClientDiagnosis() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [startDate, setStartDate] = useState("");
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [diagnoses, setDiagnoses] = useState(null);
+  const [diagnoses, setDiagnoses] = useState<any[]>([]);
   const [endDate, setEndDate] = useState("");
   const [open, setOpen] = useState(false);
   const [formMode, setFormMode] = useState<"view" | "edit">("view");

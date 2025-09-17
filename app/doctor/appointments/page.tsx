@@ -4,12 +4,11 @@ import React, { useEffect, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { DoctorEventList } from "@/components/DoctorEventList";
 import DoctorCalendarView from "@/components/DoctorCalendarView";
-import { Event } from "@/types/calendar";
 import { seeAllAppointments } from "@/hooks/appointments";
 
 const ClientAppointments = () => {
-  const [events, setEvents] = useState<Event[]>([]);
-  const [error, setError] = useState<Event[]>();
+  const [events, setEvents] = useState([]);
+  const [error, setError] = useState();
 
   useEffect(() => {
     const appointments = async () => {

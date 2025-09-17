@@ -7,7 +7,7 @@ export type SignupResponse = {
   token?: string;
 };
 
-export const signup = async (data: FormData): Promise<SignupResponse> => {
+export const signup = async (data: any): Promise<SignupResponse> => {
   console.log(data);
 
   try {

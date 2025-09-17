@@ -20,7 +20,7 @@ const DoctorHeader = () => {
   // const pathname = usePathname()
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [notifications, setNotifications] = useState(null);
+  const [notifications, setNotifications] = useState<any>(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [selectedNotification, setSelectedNotification] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -116,7 +116,7 @@ const DoctorHeader = () => {
 
               <DropdownMenuContent className="h-70 overflow-y-auto bg-white shadow-md rounded" align="end" forceMount>
                 {notifications?.length > 0 ? (
-                  notifications?.map((n, idx) => (
+                  notifications?.map((n: any, idx: any) => (
                     <DropdownMenuItem key={idx} className="cursor-pointer hover:bg-black/5 rounded-md border-b border-black/10" onClick={() => handleItemClick(n)}>
                       {n?.message}
                     </DropdownMenuItem>

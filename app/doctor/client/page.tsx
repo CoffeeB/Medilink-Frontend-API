@@ -34,7 +34,7 @@ export default function ClientDiagnosis() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [startDate, setStartDate] = useState("");
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [diagnoses, setDiagnoses] = useState<any[]>([]);
+  const [diagnoses, setDiagnoses] = useState<any>();
   const [endDate, setEndDate] = useState("");
   const [open, setOpen] = useState(false);
   const [formMode, setFormMode] = useState<"view" | "edit">("view");
@@ -68,12 +68,12 @@ export default function ClientDiagnosis() {
     return matchesSearch && matchesDateRange;
   });
 
-  const [selected, setSelected] = useState(null);
+  const [selected, setSelected] = useState<any>(null);
   const [assessment, setAssessment] = useState("");
   const [statusSel, setStatusSel] = useState("pending");
   const sigRef = useRef<SignatureCanvas | null>(null);
 
-  const handleRowClick = (d: Diagnosis) => {
+  const handleRowClick = (d: any) => {
     setFormMode("view");
     setSelected(d);
     setAssessment("");

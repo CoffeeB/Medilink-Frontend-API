@@ -1,9 +1,8 @@
 "use client";
 
-import axiosInstance from "@/lib/axios";
-import { activeMessages, contactMessage, contactMessageHistory, fetchPeerId, messageContacts, sendMessage, storePeerId, usersList } from "@/hooks/messages";
+import { activeMessages, contactMessage, contactMessageHistory, fetchPeerId, messageContacts, sendMessage, storePeerId } from "@/hooks/messages";
 import React, { useState, useRef, useEffect } from "react";
-import { Search, Phone, Video, Smile, Paperclip, Send, Check, CheckCheck, PhoneMissed, ListFilter, Camera, Mic, MessageSquareDot, Pen, Users, FileText, ImagePlay, Plus, PhoneCall, PhoneOff, VideoOff, MicOff, X, ArrowLeft, MoreVertical, Download, Play, Pause, SquarePen, MessageSquareWarningIcon, PhoneOffIcon } from "lucide-react";
+import { Search, Phone, Video, Smile, Paperclip, Send, Check, CheckCheck, PhoneMissed, ListFilter, Camera, Mic, MessageSquareDot, Pen, Users, FileText, ImagePlay, Plus, PhoneOff, VideoOff, MicOff, X, ArrowLeft, SquarePen, PhoneOffIcon } from "lucide-react";
 import ContactModal from "@/components/ContactModal";
 import Peer, { MediaConnection } from "peerjs";
 import Cookies from "js-cookie";
@@ -45,8 +44,8 @@ export default function ChatDashboard() {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showAttachmentOptions, setShowAttachmentOptions] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [contacts, setContacts] = useState([]);
-  const [allContacts, setAllContacts] = useState<Contact | null>(null);
+  const [contacts, setContacts] = useState<any>(null);
+  const [allContacts, setAllContacts] = useState<Contact[]>([]);
   const [selectedContact, setSelectedContact] = useState<Contact | null>(null);
   const [messageInput, setMessageInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -57,7 +56,7 @@ export default function ChatDashboard() {
   const [sending, setSending] = useState(false);
   const [loggedInUser, setLoggedInUser] = useState<any>(null);
   const [listError, setListError] = useState("");
-  const [messages, setMessages] = useState([]);
+  const [messages, setMessages] = useState<any>(null);
   const [isMobile, setIsMobile] = useState(false);
   const [showSidebar, setShowSidebar] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -260,8 +259,8 @@ export default function ChatDashboard() {
     setSelectedContact(contact);
 
     // Add to contacts if it doesn’t exist already
-    setContacts((prev) => {
-      const exists = prev.some((c) => (c?.id && c?.id === contact.id) || (c?._id && c?._id === contact._id));
+    setContacts((prev: any) => {
+      const exists = prev.some((c: any) => (c?.id && c?.id === contact.id) || (c?._id && c?._id === contact._id));
 
       if (exists) {
         return prev; // don’t replace, just keep as is
@@ -315,8 +314,8 @@ export default function ChatDashboard() {
     }
   }, [loggedInUser]);
 
-  const transformedContacts = contacts?.map((contact) => {
-    const otherParticipant = contact?.participants?.find((p) => {
+  const transformedContacts = contacts?.map((contact: any) => {
+    const otherParticipant = contact?.participants?.find((p: any) => {
       return p._id !== loggedInUser?.id;
     });
 
@@ -329,8 +328,8 @@ export default function ChatDashboard() {
     };
   });
 
-  const filteredContacts = transformedContacts?.filter((contact) => contact?.firstname?.toLowerCase().includes(searchQuery.toLowerCase()) || contact?.lastname?.toLowerCase().includes(searchQuery.toLowerCase()));
-  const filteredMessages = messages?.filter((message) => chatSearchQuery === "" || message?.text.toLowerCase().includes(chatSearchQuery.toLowerCase()));
+  const filteredContacts = transformedContacts?.filter((contact: any) => contact?.firstname?.toLowerCase().includes(searchQuery.toLowerCase()) || contact?.lastname?.toLowerCase().includes(searchQuery.toLowerCase()));
+  const filteredMessages = messages?.filter((message: any) => chatSearchQuery === "" || message?.text.toLowerCase().includes(chatSearchQuery.toLowerCase()));
 
   // Call functions
   const formatCallDuration = (seconds: number) => {
@@ -601,7 +600,7 @@ export default function ChatDashboard() {
 
     try {
       const response = await sendMessage(conversationId, text);
-      setMessages((prev) => [...prev, newMessage]);
+      setMessages((prev: any) => [...prev, newMessage]);
       setMessageInput("");
     } catch (error: any) {
       console.log(error);
@@ -625,7 +624,7 @@ export default function ChatDashboard() {
         fileName: file.name,
         fileSize: file.size,
       };
-      setMessages((prev) => [...prev, fileMessage]);
+      setMessages((prev: any) => [...prev, fileMessage]);
     }
     setShowAttachmentOptions(false);
   };
@@ -643,7 +642,7 @@ export default function ChatDashboard() {
         type: "image",
         imageUrl: URL.createObjectURL(file),
       };
-      setMessages((prev) => [...prev, imageMessage]);
+      setMessages((prev: any) => [...prev, imageMessage]);
     }
   };
 
@@ -704,7 +703,7 @@ export default function ChatDashboard() {
         type: "voice",
         audioUrl: recordedAudioURL,
       };
-      setMessages((prev) => [...prev, voiceMessage]);
+      setMessages((prev: any) => [...prev, voiceMessage]);
       setRecordedAudioURL(null);
     }
   };
@@ -752,7 +751,7 @@ export default function ChatDashboard() {
               </button>
             )}
 
-            <button onClick={endCall} className="p-4 rounded-full bg-red-500 hover:bg-red-600 transition-colors">
+            <button onClick={() => endCall()} className="p-4 rounded-full bg-red-500 hover:bg-red-600 transition-colors">
               <PhoneOff className="w-6 h-6" />
             </button>
           </div>
@@ -834,7 +833,7 @@ export default function ChatDashboard() {
 
         {/* Contacts List */}
         <div className="flex-1 overflow-y-auto">
-          {filteredContacts.map((contact) => (
+          {filteredContacts?.map((contact: any) => (
             <div
               key={contact?._id}
               onClick={() => {
@@ -886,10 +885,20 @@ export default function ChatDashboard() {
                 </div>
               </div>
               <div className="flex items-center space-x-2">
-                <button onClick={() => startAudioCall(recipientPeerId)} disabled={!recipientPeerId} className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-full transition-colors cursor-pointer">
+                <button
+                  onClick={() => {
+                    if (recipientPeerId) startAudioCall(recipientPeerId);
+                  }}
+                  disabled={!recipientPeerId}
+                  className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-full transition-colors cursor-pointer">
                   {recipientPeerId ? <Phone className="w-5 h-5" /> : <PhoneOffIcon className="w-5 h-5" />}
                 </button>
-                <button onClick={() => startVideoCall(recipientPeerId)} disabled={!recipientPeerId} className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-full transition-colors cursor-pointer">
+                <button
+                  onClick={() => {
+                    if (recipientPeerId) startVideoCall(recipientPeerId);
+                  }}
+                  disabled={!recipientPeerId}
+                  className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-full transition-colors cursor-pointer">
                   {recipientPeerId ? <Video className="w-5 h-5" /> : <VideoOff className="w-5 h-5" />}
                 </button>
                 <button onClick={() => setShowChatSearch(!showChatSearch)} className="p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-200 rounded-full transition-colors cursor-pointer">
@@ -917,7 +926,7 @@ export default function ChatDashboard() {
 
           {/* Messages */}
           <div className="flex-1 overflow-y-auto p-4 space-y-4">
-            {filteredMessages.map((message: any) => (
+            {filteredMessages?.map((message: any) => (
               <div key={message?.id} className={`flex ${message?.sent || message?.sender?._id === loggedInUser?.id ? "justify-end" : "justify-start"}`}>
                 {message?.isMissedCall ? (
                   <div className="flex items-center justify-center w-full">

@@ -23,7 +23,7 @@ export function DoctorEventList({ events }: DoctorEventListProps) {
               <div className="space-y-1">
                 <h4 className="text-xs sm:text-sm font-medium leading-none">{event.clientName}</h4>
                 <p className="text-xs sm:text-sm text-muted-foreground">
-                  {new Date(event.date).toLocaleDateString()} by {event.time}
+                  {new Date(event.preferredDate).toLocaleDateString()} by {event.preferredTime}
                 </p>
                 <p className="text-xs sm:text-sm text-muted-foreground">{event.address}</p>
               </div>

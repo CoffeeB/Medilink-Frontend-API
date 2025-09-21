@@ -15,9 +15,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 
 import "./styles.css";
 import { Textarea } from "../ui/textarea";
+import { format } from "date-fns";
+import Cookies from "js-cookie";
 
 type Props = {
-  events: Event[];
+  events: any[];
   onAddEvent: (event: Event) => void;
   onUpdateEvent: (event: Event) => void;
   onDeleteEvent: (id: string) => void;
@@ -40,6 +42,17 @@ const CalendarView = ({ events, onAddEvent, onUpdateEvent, onDeleteEvent }: Prop
     signature: "",
     description: "",
   });
+  const [user, setUser] = useState<any>();
+
+  useEffect(() => {
+    const cookieUser = Cookies.get("user");
+
+    if (cookieUser) {
+      const parsedUser = JSON.parse(cookieUser); // parse string → object
+      setUser(parsedUser);
+      console.log("parsedUser - ", parsedUser);
+    }
+  }, []);
 
   useEffect(() => {
     if (openForm && sigCanvas.current) {
@@ -59,7 +72,7 @@ const CalendarView = ({ events, onAddEvent, onUpdateEvent, onDeleteEvent }: Prop
 
   // When clicking on an existing event
   const handleEventClick = (info: EventClickArg) => {
-    const found = events.find((ev) => ev.id === info.event.id);
+    const found = events.find((ev) => ev._id === info.event.id);
     if (found) {
       setSelectedEvent(found);
       setOpenDetails(true);
@@ -147,7 +160,33 @@ const CalendarView = ({ events, onAddEvent, onUpdateEvent, onDeleteEvent }: Prop
           center: "title",
           right: "dayGridMonth,dayGridWeek,dayGridDay",
         }}
-        events={events}
+        events={events
+          ?.filter((event: any) => event?.marketer === user?.id && event?.form?.preferredDate && event?.form?.preferredTime)
+          ?.map((ev: any) => {
+            const rawDate = ev.form?.preferredDate;
+            if (!rawDate) {
+              console.warn("Missing preferredDate for event:", ev);
+              return null;
+            }
+
+            const dateOnly = new Date(rawDate);
+            if (isNaN(dateOnly.getTime())) {
+              console.warn("Invalid preferredDate:", rawDate, ev);
+              return null; // 🚨 skip invalid event
+            }
+
+            const [hours, minutes] = (ev.form?.preferredTime || "00:00").split(":");
+            dateOnly.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+
+            return {
+              id: ev._id,
+              title: ev.form?.clientName || "Untitled",
+              start: dateOnly.toISOString(), // ✅ only safe dates make it here
+            };
+          })
+          .filter(Boolean)} // remove nulls
+        height="auto"
+        contentHeight="auto"
         dateClick={handleDateClick}
         eventClick={handleEventClick}
         eventContent={renderEventContent}
@@ -249,22 +288,22 @@ const CalendarView = ({ events, onAddEvent, onUpdateEvent, onDeleteEvent }: Prop
           {selectedEvent && (
             <div className="space-y-2">
               <p>
-                <b>Client:</b> {selectedEvent.title}
+                <b>Client:</b> {selectedEvent?.form?.clientName}
               </p>
               <p>
-                <b>Sex:</b> {selectedEvent.sex}
+                <b>Sex:</b> {selectedEvent?.form?.sex}
               </p>
               <p>
-                <b>Age:</b> {selectedEvent.age}
+                <b>Age:</b> {selectedEvent?.form?.age}
               </p>
               <p>
-                <b>Date:</b> {selectedEvent.preferredDate}
+                <b>Date:</b> {format(new Date(selectedEvent?.form?.preferredDate), "dd MMM yyyy")}
               </p>
               <p>
-                <b>Time:</b> {selectedEvent.preferredTime}
+                <b>Time:</b> {selectedEvent?.form?.preferredTime}
               </p>
               <p>
-                <b>Address:</b> {selectedEvent.address}
+                <b>Address:</b> {selectedEvent?.form?.address}
               </p>
               {selectedEvent.signature && (
                 <div>

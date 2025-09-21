@@ -179,17 +179,17 @@ export default function DoctorProfile() {
                     </DialogHeader>
                   </DialogContent>
                 </Dialog>
-                <Button variant="outline" className="w-full text-sm sm:text-base cursor-pointer" onClick={() => setOpenClientPin(true)}>
+                {/* <Button variant="outline" className="w-full text-sm sm:text-base cursor-pointer" onClick={() => setOpenClientPin(true)}>
                   Change PIN?
-                </Button>
-                <Dialog open={openClientPin} onOpenChange={setOpenClientPin}>
+                </Button> */}
+                {/* <Dialog open={openClientPin} onOpenChange={setOpenClientPin}>
                   <DialogContent className="w-[90vw] max-w-md sm:max-w-lg">
                     <DialogHeader>
                       <DialogTitle>Change Client PIN</DialogTitle>
                     </DialogHeader>
                     <ChangePinForm setOpen={setOpenClientPin} onPinChange={handleClientPinChange} />
                   </DialogContent>
-                </Dialog>
+                </Dialog> */}
               </div>
 
               <div className="space-y-3 sm:space-y-4 mt-1">

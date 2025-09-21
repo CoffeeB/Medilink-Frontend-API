@@ -4,11 +4,12 @@
 import FullCalendar from "@fullcalendar/react";
 import dayGridPlugin from "@fullcalendar/daygrid";
 import interactionPlugin from "@fullcalendar/interaction";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import "@/components/DoctorCalendarView/styles.css";
 import { Button } from "./ui/button";
 import DoctorCalendarViewModal from "./DoctorCalendarViewModal";
+import Cookies from "js-cookie";
 
 interface EventData {
   id: string;
@@ -21,11 +22,22 @@ interface EventData {
 }
 
 interface DoctorCalendarViewProps {
-  events: EventData[];
+  events: any[];
 }
 
 export default function DoctorCalendarView({ events }: DoctorCalendarViewProps) {
-  const [selectedEvent, setSelectedEvent] = useState<EventData | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [user, setUser] = useState<any>();
+
+  useEffect(() => {
+    const cookieUser = Cookies.get("user");
+
+    if (cookieUser) {
+      const parsedUser = JSON.parse(cookieUser); // parse string → object
+      setUser(parsedUser);
+      console.log("parsedUser - ", parsedUser);
+    }
+  }, []);
 
   return (
     <>
@@ -38,13 +50,31 @@ export default function DoctorCalendarView({ events }: DoctorCalendarViewProps) 
             center: "title",
             right: "dayGridMonth,dayGridWeek,dayGridDay",
           }}
-          events={events?.map((ev) => ({
-            id: ev.id,
-            name: ev.clientName,
-            start: `${ev.date}T${ev.time}`, // combine date + time
-          }))}
+          events={events
+            ?.filter((event: any) => event?.doctor === user?.id && event?.form?.preferredDate && event?.form?.preferredTime)
+            ?.map((ev: any) => {
+              const rawDate = ev.form?.preferredDate;
+              if (!rawDate) {
+                return null;
+              }
+
+              const dateOnly = new Date(rawDate);
+              if (isNaN(dateOnly.getTime())) {
+                return null; // 🚨 skip invalid event
+              }
+
+              const [hours, minutes] = (ev.form?.preferredTime || "00:00").split(":");
+              dateOnly.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+
+              return {
+                id: ev._id,
+                title: ev.form?.clientName || "Untitled",
+                start: dateOnly.toISOString(), // ✅ only safe dates make it here
+              };
+            })
+            .filter(Boolean)} // remove nulls
           eventClick={(info) => {
-            const ev = events?.find((e) => e.id === info.event.id);
+            const ev = events?.find((e: any) => e._id === info.event.id);
             if (ev) setSelectedEvent(ev);
           }}
           height="auto"

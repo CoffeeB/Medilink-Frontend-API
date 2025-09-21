@@ -1,25 +1,19 @@
-'use client'
+"use client";
 
-import React from 'react'
+import React from "react";
 import { useState } from "react";
-import Image from 'next/image'
-import { Button } from './ui/button'
-import Link from 'next/link'
+import Image from "next/image";
+import { Button } from "./ui/button";
+import Link from "next/link";
 // import { usePathname } from 'next/navigation'
-import { Menu, X } from "lucide-react"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import AvatarUpload from './AvatarUpload';
-import { useRouter } from "next/navigation"
+import { Menu, X } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import AvatarUpload from "./AvatarUpload";
+import { useRouter } from "next/navigation";
 
 const MarketerHeader = () => {
   // const pathname = usePathname()
-  const router = useRouter()
+  const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const isActive = (path: string) => {
@@ -28,13 +22,13 @@ const MarketerHeader = () => {
 
   const handleLogout = async () => {
     try {
-      localStorage.removeItem("token")  
+      localStorage.removeItem("token");
       // Redirect to login pag
-     router.push("/marketer/login")
+      router.push("/marketer/login");
     } catch (error) {
-      console.error("Logout failed", error)
+      console.error("Logout failed", error);
     }
-  }
+  };
 
   // const isActive = (path: string) => pathname === path
 
@@ -44,51 +38,44 @@ const MarketerHeader = () => {
         <div className="flex items-center justify-between h-[80px] px-6 py-3">
           {/* Logo */}
           <div className="flex items-center space-x-4">
-            <Image
-              src="/images/logo.svg"
-              alt="Excel connect logo"
-              width={250}
-              height={32}
-              priority
-            />
+            <Image src="/images/logo.svg" alt="Excel connect logo" width={250} height={32} priority />
           </div>
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center space-x-9">
-            <Link className={`hover:text-primary ${isActive('/marketer/appointments') ? 'text-primary' : ''}`} href="/marketer/appointments">Appointments</Link>
-            <Link className={`hover:text-primary ${isActive('/marketer/messaging') ? 'text-primary' : ''}`} href="/marketer/messages">Messaging</Link>
-            <Link className={`hover:text-primary ${isActive('/marketer/register-a-doc') ? 'text-primary' : ''}`} href="/marketer/register-a-doc">Register a Doctor</Link>
+            <Link className={`hover:text-primary ${isActive("/marketer/appointments") ? "text-primary" : ""}`} href="/marketer/appointments">
+              Appointments
+            </Link>
+            <Link className={`hover:text-primary ${isActive("/marketer/messaging") ? "text-primary" : ""}`} href="/marketer/messages">
+              Messaging
+            </Link>
+            <Link className={`hover:text-primary ${isActive("/marketer/register-a-doc") ? "text-primary" : ""}`} href="/marketer/register-a-doc">
+              Register a Doctor
+            </Link>
           </nav>
 
           {/* Right Side - Profile */}
           <div className="flex items-center space-x-4">
             <DropdownMenu>
-              
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full bg-secondary hover:bg-secondary text-white hover:text-white cursor-pointer">
-                  MI
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full bg-transparent border border-black/70 cursor-pointer overflow-hidden">
+                  <Image src="/images/Blank_Profile.jpg" alt="Excel Connect logo" fill className="object-cover rounded-full" priority />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56 bg-white" align="end" forceMount>
                 <DropdownMenuSeparator />
                 <Link href="/marketer/profile">
-                  <DropdownMenuItem className='cursor-pointer'>Profile</DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer">Profile</DropdownMenuItem>
                 </Link>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem 
-                  className='cursor-pointer'
-                  onClick={handleLogout}
-                  >
-                    Log out
+                <DropdownMenuItem className="cursor-pointer" onClick={handleLogout}>
+                  Log out
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-            
+
             {/* Mobile Menu Toggle */}
-            <button
-              className="md:hidden p-2"
-              onClick={() => setMobileOpen(!mobileOpen)}
-            >
+            <button className="md:hidden p-2" onClick={() => setMobileOpen(!mobileOpen)}>
               {mobileOpen ? <X size={24} /> : <Menu size={24} />}
             </button>
           </div>
@@ -96,15 +83,21 @@ const MarketerHeader = () => {
 
         {/* Mobile Nav */}
         {mobileOpen && (
-          <nav className="md:hidden bg-white border-t flex flex-col space-y-2 px-6 py-4">            
-            <Link onClick={() => setMobileOpen(false)} href="/marketer/appointments" className={`hover:text-primary ${isActive('/marketer/appointments') ? 'text-primary' : ''}`}>Appointments</Link>
-            <Link onClick={() => setMobileOpen(false)} href="/marketer/messages" className={`hover:text-primary ${isActive('/marketer/messages') ? 'text-primary' : ''}`}>Messaging</Link>
-            <Link onClick={() => setMobileOpen(false)} href="/marketer/register-a-doc" className={`hover:text-primary ${isActive('/marketer/register-a-doc') ? 'text-primary' : ''}`}>Register a Doctor</Link>
+          <nav className="md:hidden bg-white border-t flex flex-col space-y-2 px-6 py-4">
+            <Link onClick={() => setMobileOpen(false)} href="/marketer/appointments" className={`hover:text-primary ${isActive("/marketer/appointments") ? "text-primary" : ""}`}>
+              Appointments
+            </Link>
+            <Link onClick={() => setMobileOpen(false)} href="/marketer/messages" className={`hover:text-primary ${isActive("/marketer/messages") ? "text-primary" : ""}`}>
+              Messaging
+            </Link>
+            <Link onClick={() => setMobileOpen(false)} href="/marketer/register-a-doc" className={`hover:text-primary ${isActive("/marketer/register-a-doc") ? "text-primary" : ""}`}>
+              Register a Doctor
+            </Link>
           </nav>
         )}
       </div>
     </header>
-  )
-}
+  );
+};
 
-export default MarketerHeader
+export default MarketerHeader;

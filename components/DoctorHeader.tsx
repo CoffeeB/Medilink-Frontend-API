@@ -106,11 +106,11 @@ const DoctorHeader = () => {
           </nav>
 
           {/* Right Side - Profile */}
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button className="text-primary hover:text-primary" variant="ghost" size="icon">
-                  <Bell className="h-6 w-6 cursor-pointer" />
+                <Button className="text-primary cursor-pointer hover:text-primary" variant="ghost">
+                  <Bell className="cursor-pointer" size={20} />
                 </Button>
               </DropdownMenuTrigger>
 
@@ -129,8 +129,8 @@ const DoctorHeader = () => {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="relative h-8 w-8 rounded-full bg-secondary hover:bg-secondary text-white hover:text-white cursor-pointer">
-                  MI
+                <Button variant="ghost" className="relative h-8 w-8 rounded-full bg-transparent border border-black/70 cursor-pointer overflow-hidden">
+                  <Image src="/images/Blank_Profile.jpg" alt="Excel Connect logo" fill className="object-cover rounded-full" priority />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56 bg-white" align="end" forceMount>

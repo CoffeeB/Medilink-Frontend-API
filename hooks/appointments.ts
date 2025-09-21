@@ -44,8 +44,6 @@ export const seeAllAppointments = async (doctor: boolean, marketer: boolean) => 
         Authorization: `Bearer ${token}`,
       },
     });
-
-    console.log("response", response);
   }
   return response?.data;
 };

@@ -716,9 +716,9 @@ export default function ChatDashboard() {
       <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex flex-col items-center justify-center text-white">
         <div className="text-center mb-8">
           <img src={selectedContact?.avatar} alt={selectedContact?.firstname} className="w-32 h-32 rounded-full mx-auto mb-4" />
-          <h2 className="text-2xl font-semibold mb-2">
+          {/* <h2 className="text-2xl font-semibold mb-2">
             {selectedContact?.firstname} {selectedContact?.lastname}
-          </h2>
+          </h2> */}
           <h3>{callerId}</h3>
           {callState === "audio-calling" || (callState === "video-calling" && <h3>Calling</h3>)}
           {callState === "audio-connected" || (callState === "video-connected" && <h3>In call</h3>)}

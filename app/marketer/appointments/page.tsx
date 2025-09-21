@@ -35,8 +35,7 @@ const ClientAppointments = () => {
       const marketer = true;
       try {
         const response = await seeAllAppointments(doctor, marketer);
-
-        setEvents(response.data);
+        setEvents(response);
       } catch (error: any) {
         console.log(error);
         setError(error.response?.data?.error || "Failed to fetch appointments. Please try again.");

@@ -17,9 +17,7 @@ const ClientAppointments = () => {
       try {
         const response = await seeAllAppointments(doctor, marketer);
 
-        console.log(response);
-
-        setEvents(response.data);
+        setEvents(response);
       } catch (error: any) {
         console.log(error);
         setError(error.response?.data?.error || "Failed to fetch appointments. Please try again.");
@@ -28,6 +26,7 @@ const ClientAppointments = () => {
 
     appointments();
   }, []);
+
   return (
     <div className="container max-w-[1350px] mx-auto p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
       <Card>

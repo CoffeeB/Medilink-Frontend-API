@@ -51,28 +51,19 @@ export default function DoctorCalendarView({ events }: DoctorCalendarViewProps) 
             right: "dayGridMonth,dayGridWeek,dayGridDay",
           }}
           events={events
-            ?.filter((event: any) => event?.doctor === user?.id && event?.form?.preferredDate && event?.form?.preferredTime)
+            ?.filter((ev: any) => ev?.marketer === user?.id && ev?.form?.preferredDate && ev?.form?.preferredTime)
             ?.map((ev: any) => {
-              const rawDate = ev.form?.preferredDate;
-              if (!rawDate) {
-                return null;
-              }
-
-              const dateOnly = new Date(rawDate);
-              if (isNaN(dateOnly.getTime())) {
-                return null; // 🚨 skip invalid event
-              }
-
-              const [hours, minutes] = (ev.form?.preferredTime || "00:00").split(":");
-              dateOnly.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+              const rawDate = ev.form.preferredDate;
+              const [hours, minutes] = ev.form.preferredTime.split(":");
+              const date = new Date(rawDate);
+              date.setHours(Number(hours), Number(minutes), 0, 0);
 
               return {
                 id: ev._id,
-                title: ev.form?.clientName || "Untitled",
-                start: dateOnly.toISOString(), // ✅ only safe dates make it here
+                title: ev.form.clientName || "Untitled",
+                start: date.toISOString(),
               };
-            })
-            .filter(Boolean)} // remove nulls
+            })}
           eventClick={(info) => {
             const ev = events?.find((e: any) => e._id === info.event.id);
             if (ev) setSelectedEvent(ev);

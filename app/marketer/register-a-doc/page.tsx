@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Upload, FileText, CreditCard, Shield } from "lucide-react";
 import countries from "world-countries";
 import { Eye, EyeOff } from "lucide-react";
-import { signup } from "@/hooks/registration";
+import { registerDoctor } from "@/hooks/registration";
 
 const phoneSchema = z
   .string()
@@ -27,32 +27,33 @@ const countryOptions = countries
   }))
   .sort((a, b) => a.label.localeCompare(b.label));
 
-
-const registerFormSchema = z.object({
-  firstName: z.string().min(1, "First name is required"),
-  lastName: z.string().min(1, "Last name is required"),
-  middleName: z.string().optional(),
-  dateOfBirth: z.string().min(1, "Date of birth is required"),
-  phoneNumber: phoneSchema,
-  email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string().min(6, "Confirm password is required"),
-  certificate: z.any().optional(),
-  driversLicense: z.any().optional(),
-  ssn: z.any().optional(),
-  resume: z.any().optional(),
-  address: z.object({
-    street: z.string().min(1, "Street is required"),
-    streetLine2: z.string().optional(),
-    city: z.string().min(1, "City is required"),
-    region: z.string().min(1, "Region is required"),
-    postalCode: z.string().min(1, "Postal code is required"),
-    country: z.string().min(1, "Country is required"),
-  }),
-}).refine((data) => data.password === data.confirmPassword, {
-  path: ["confirmPassword"], // error will show under confirmPassword
-  message: "Passwords do not match",
-});
+const registerFormSchema = z
+  .object({
+    firstname: z.string().min(1, "First name is required"),
+    lastname: z.string().min(1, "Last name is required"),
+    middlename: z.string().optional(),
+    dateOfBirth: z.string().min(1, "Date of birth is required"),
+    phone: phoneSchema,
+    email: z.string().email("Invalid email address"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string().min(6, "Confirm password is required"),
+    certificate: z.any().optional(),
+    driversLicense: z.any().optional(),
+    ssn: z.any().optional(),
+    resume: z.any().optional(),
+    address: z.object({
+      street: z.string().min(1, "Street is required"),
+      streetLine2: z.string().optional(),
+      city: z.string().min(1, "City is required"),
+      region: z.string().min(1, "Region is required"),
+      postalCode: z.string().min(1, "Postal code is required"),
+      country: z.string().min(1, "Country is required"),
+    }),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    path: ["confirmPassword"], // error will show under confirmPassword
+    message: "Passwords do not match",
+  });
 
 type FormValues = z.infer<typeof registerFormSchema>;
 
@@ -64,21 +65,21 @@ export default function RegisterADoctor() {
   const form = useForm<FormValues>({
     resolver: zodResolver(registerFormSchema),
     defaultValues: {
-      firstName: "",
-      lastName: "",
-      middleName: "",
+      firstname: "",
+      lastname: "",
+      middlename: "",
       dateOfBirth: "",
-      phoneNumber: "",
-      email: "",   
+      phone: "",
+      email: "",
       password: "",
       confirmPassword: "",
-        address: {
-          street: "",
-          streetLine2: "",
-          city: "",
-          region: "",
-          postalCode: "",
-          country: "",
+      address: {
+        street: "",
+        streetLine2: "",
+        city: "",
+        region: "",
+        postalCode: "",
+        country: "",
       },
     },
   });
@@ -86,91 +87,16 @@ export default function RegisterADoctor() {
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
     try {
-      const payload = { ...data, ...uploadedFiles };
-      const response = await signup(payload);
-      console.log("Signup success:", response);
-      router.push("/marketer/login");
+      console.log("Signup initiated");
+      const payload = { ...data, role: "doctor" };
+      const response = await registerDoctor(payload);
+      router.push("/marketer/messages");
     } catch (error: any) {
       console.log("Registration error:", error.message);
     } finally {
       setIsSubmitting(false);
     }
   };
-
-  const [uploadedFiles, setUploadedFiles] = useState<{
-    certificate?: File;
-    driversLicense?: File;
-    ssn?: File;
-    resume?: File;
-  }>({});
-
-  const [isDragging, setIsDragging] = useState<string | null>(null);
-
-  const handleFileUpload = (field: keyof typeof uploadedFiles, file: File) => {
-    form.setValue(field, file);
-    setUploadedFiles((prev) => ({ ...prev, [field]: file }));
-  };
-
-  const handleRemoveFile = (field: keyof typeof uploadedFiles) => {
-    form.setValue(field, undefined);
-    setUploadedFiles((prev) => ({ ...prev, [field]: undefined }));
-  };
-
-  const renderFileSection = (field: keyof typeof uploadedFiles, icon: React.ReactNode, title: string) => (
-    <div
-      className={`border-2 border-dashed rounded-lg p-6 transition-colors bg-gray-100 ${isDragging === field ? "border-blue-500 bg-blue-50" : "border-gray-300 bg-gray-50"}`}
-      onDragOver={(e) => {
-        e.preventDefault();
-        setIsDragging(field);
-      }}
-      onDragLeave={() => setIsDragging(null)}
-      onDrop={(e) => {
-        e.preventDefault();
-        setIsDragging(null);
-        const file = e.dataTransfer.files?.[0];
-        if (file) handleFileUpload(field, file);
-      }}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          {icon}
-          <div>
-            <p className="text-sm font-medium text-gray-700">{title}</p>
-            <p className="text-xs text-gray-500">Drag & drop your file or click to upload</p>
-          </div>
-        </div>
-        <Button type="button" variant="secondary" size="sm" onClick={() => document.getElementById(field)?.click()}>
-          <Upload className="h-4 w-4 mr-2" />
-          {uploadedFiles[field] ? "Change" : "Upload"}
-        </Button>
-      </div>
-
-      <input
-        id={field}
-        type="file"
-        className="hidden"
-        accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) handleFileUpload(field, file);
-        }}
-      />
-
-      {/* Preview section */}
-      {uploadedFiles[field] && (
-        <div className="mt-4 flex items-center justify-between bg-white p-3 rounded-lg shadow-sm">
-          <div className="flex items-center space-x-3">
-            <div>
-              <p className="text-sm font-medium text-gray-700">{uploadedFiles[field]?.name}</p>
-              <p className="text-xs text-gray-500">{((uploadedFiles[field]?.size || 0) / 1024).toFixed(1)} KB</p>
-            </div>
-          </div>
-          <Button variant="ghost" size="sm" onClick={() => handleRemoveFile(field)}>
-            Remove
-          </Button>
-        </div>
-      )}
-    </div>
-  );
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -194,7 +120,7 @@ export default function RegisterADoctor() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
-                      name="firstName"
+                      name="firstname"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-gray-700 font-medium">First name</FormLabel>
@@ -226,7 +152,7 @@ export default function RegisterADoctor() {
 
                     <FormField
                       control={form.control}
-                      name="middleName"
+                      name="middlename"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-gray-700 font-medium">Middle name (optional)</FormLabel>
@@ -242,7 +168,7 @@ export default function RegisterADoctor() {
 
                     <FormField
                       control={form.control}
-                      name="phoneNumber"
+                      name="phone"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-gray-700 font-medium">Phone Number</FormLabel>
@@ -258,7 +184,7 @@ export default function RegisterADoctor() {
 
                     <FormField
                       control={form.control}
-                      name="lastName"
+                      name="lastname"
                       render={({ field }) => (
                         <FormItem>
                           <FormLabel className="text-gray-700 font-medium">Last name</FormLabel>
@@ -367,7 +293,7 @@ export default function RegisterADoctor() {
                     )}
                   />
 
-                  <div className="grid grid-cols-2 gap-6">                    
+                  <div className="grid grid-cols-2 gap-6">
                     <FormField
                       control={form.control}
                       name="address.city"
@@ -380,7 +306,7 @@ export default function RegisterADoctor() {
                         </FormItem>
                       )}
                     />
-                    
+
                     <FormField
                       control={form.control}
                       name="address.region"
@@ -412,7 +338,7 @@ export default function RegisterADoctor() {
                       name="address.country"
                       render={({ field }) => (
                         <FormItem className="w-full">
-                          <FormLabel>Country</FormLabel>
+                          {/* <FormLabel>Country</FormLabel> */}
                           <FormControl>
                             <select {...field} className="w-full rounded-md border px-3 py-2">
                               <option value="">Select Country</option>
@@ -430,25 +356,20 @@ export default function RegisterADoctor() {
                   </div>
 
                   {/* Document Upload Sections */}
-                  <h3 className="text-lg font-medium text-gray-900">Document Upload</h3>
+                  {/* <h3 className="text-lg font-medium text-gray-900">Document Upload</h3> */}
 
                   {/* Drivers License */}
-                  <div className="grid gap-6 ">
+                  {/* <div className="grid gap-6 ">
                     {renderFileSection("certificate", <FileText className="h-6 w-6 text-gray-400" />, "Certificate")}
                     {renderFileSection("driversLicense", <CreditCard className="h-6 w-6 text-gray-400" />, "Driver's License")}
                     {renderFileSection("ssn", <Shield className="h-6 w-6 text-gray-400" />, "SSN")}
                     {renderFileSection("resume", <FileText className="h-6 w-6 text-gray-400" />, "Resume")}
-                  </div>
+                  </div> */}
 
                   {/* Submit Button */}
                   <div className="pt-6">
-                    <Button
-                      type="submit"
-                      variant="secondary"
-                      className="w-full py-3 text-lg font-semibold cursor-pointer"
-                      disabled={isSubmitting}
-                    >
-                      {isSubmitting ? 'Submitting...' : 'Submit'}
+                    <Button type="submit" variant="secondary" className="w-full py-3 text-lg font-semibold cursor-pointer" disabled={isSubmitting}>
+                      {isSubmitting ? "Submitting..." : "Submit"}
                     </Button>
                   </div>
                 </form>

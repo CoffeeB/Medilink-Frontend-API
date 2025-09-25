@@ -65,7 +65,7 @@ export const confirmAppointment = async (formId: string) => {
   return response?.data;
 };
 
-export const createAppointment = async (date: any, time: any, description: any) => {
+export const createAppointment = async (form: any) => {
   const token = Cookies.get("token");
   if (!token) {
     throw new Error("Token is required");
@@ -73,9 +73,7 @@ export const createAppointment = async (date: any, time: any, description: any) 
 
   let response;
   response = await axiosInstance.post(`/api/appointments/doctor`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
+    form,
   });
 
   console.log("response", response);

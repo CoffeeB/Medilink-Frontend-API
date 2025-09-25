@@ -62,18 +62,19 @@ export default function ContactModal({ open, onClose, contacts, onSelectContact 
                   onSelectContact(contact); // Trigger handler
                   onClose(); // Close modal after selecting
                 }}>
-                <Avatar>
+                <Avatar className="relative">
                   <AvatarImage src={contact.avatar} alt={contact.name} />
                   <AvatarFallback>
                     {contact?.firstname?.charAt(0)}
                     {contact?.lastname?.charAt(0)}
                   </AvatarFallback>
+                  {contact?.online ? <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div> : <div className="absolute bottom-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>}
                 </Avatar>
                 <div className="flex-1">
                   <p className="font-medium text-gray-900">
                     {contact?.firstname} {contact?.lastname}
                   </p>
-                  <p className="text-sm text-gray-500 truncate">{contact?.email}</p>
+                  {/* <p className="text-sm text-gray-500 truncate">{contact?.email}</p> */}
                 </div>
                 {/* {contact.online && <span className="w-3 h-3 bg-green-500 rounded-full" />} */}
               </div>

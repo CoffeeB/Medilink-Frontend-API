@@ -41,7 +41,7 @@ export default function DoctorLogin() {
       const { user } = await login(data);
 
       if (user.role === "doctor") {
-        router.push("/doctor/appointments");
+        router.push("/doctor/messages");
       } else {
         setError("Unauthorized access. Please log in as a doctor.");
         logout();

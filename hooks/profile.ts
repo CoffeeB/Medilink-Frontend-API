@@ -20,10 +20,23 @@ export async function updateProfile(data: any) {
     throw new Error("Token is required");
   }
 
-  const res = await axiosInstance.patch("/api/users/profile", data, {
+  const res = await axiosInstance.patch("/api/auth/profile", data, {
     headers: {
       Authorization: `Bearer ${token}`,
     },
   });
   return res.data;
 }
+
+export const getProfileById = async (id: any) => {
+  const token = Cookies.get("token");
+  if (!token) {
+    throw new Error("Token is required");
+  }
+  const response = await axiosInstance.get(`/api/auth/${id}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};

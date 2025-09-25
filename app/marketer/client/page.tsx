@@ -30,7 +30,7 @@ interface Diagnosis {
   assessment?: string;
 }
 
-export default function DoctorClientsList() {
+export default function MarketerClientsList() {
   const [searchTerm, setSearchTerm] = useState("");
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [startDate, setStartDate] = useState("");
@@ -38,7 +38,7 @@ export default function DoctorClientsList() {
   const [diagnoses, setDiagnoses] = useState<any>();
   const [endDate, setEndDate] = useState("");
   const [open, setOpen] = useState(false);
-  const [formMode, setFormMode] = useState<"view" | "edit" | "create">("view");
+  const [formMode, setFormMode] = useState<"view" | "edit">("view");
   const [form, setForm] = useState<any>({
     clientName: "",
     sex: "",
@@ -120,7 +120,18 @@ export default function DoctorClientsList() {
   const canEdit = selected && (selected?.form?.status === "pending" || selected?.form?.status === "review");
 
   function handleAddAppointment() {
-    setFormMode("create");
+    setForm({
+      id: "",
+      clientName: "",
+      sex: "",
+      age: "",
+      preferredDate: "",
+      preferredTime: "",
+      description: "",
+      address: "",
+      signature: "",
+    });
+    setFormMode("edit");
     setOpen(true);
     setTimeout(() => sigRef.current?.clear(), 0);
   }
@@ -170,7 +181,7 @@ export default function DoctorClientsList() {
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 pb-4">
           <CardTitle className="text-base sm:text-lg font-medium">Client</CardTitle>
           <Button onClick={() => handleAddAppointment()} className="cursor-pointer">
-            Add a Client
+            Add an Apt.
           </Button>
         </CardHeader>
         <CardContent>
@@ -225,11 +236,10 @@ export default function DoctorClientsList() {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="w-[90vw] max-w-2xl max-h-[90vh] overflow-y-auto">
-          {/* VIEW MODE */}
           {selected && formMode === "view" && (
             <>
               <DialogHeader>
-                <DialogTitle className="text-base sm:text-lg">Client Details</DialogTitle>
+                <DialogTitle className="text-base sm:text-lg">Appointment Details</DialogTitle>
               </DialogHeader>
 
               <div className="space-y-3">
@@ -258,6 +268,17 @@ export default function DoctorClientsList() {
                     </p>
                   </>
                 )}
+                {selected?.form?.signature ? (
+                  <div>
+                    <b className="text-sm sm:text-base">Client Signature:</b>
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img src={selected?.form?.signature} alt="Client Signature" className="mt-2 border rounded-md w-32 sm:w-40" />
+                  </div>
+                ) : (
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    <b>Client Signature:</b> None
+                  </p>
+                )}
 
                 {canEdit && (
                   <>
@@ -284,16 +305,7 @@ export default function DoctorClientsList() {
                       <div className="lg:col-span-2">
                         <Label className="mb-1 block text-xs sm:text-sm">Doctor Signature</Label>
                         <div className="border rounded-md p-2 bg-white">
-                          <SignatureCanvas
-                            ref={sigRef}
-                            penColor="black"
-                            canvasProps={{
-                              width: 500,
-                              height: 160,
-                              className: "border w-full h-[120px] sm:h-[160px]",
-                            }}
-                            backgroundColor="white"
-                          />
+                          <SignatureCanvas ref={sigRef} penColor="black" canvasProps={{ width: 500, height: 160, className: "border w-full h-[120px] sm:h-[160px]" }} backgroundColor="white" />
                         </div>
                         <div className="flex justify-between mt-2">
                           <Button type="button" variant="outline" size="sm" onClick={() => sigRef.current?.clear()} className="text-xs sm:text-sm">
@@ -313,80 +325,74 @@ export default function DoctorClientsList() {
               </div>
             </>
           )}
-
-          {/* CREATE MODE */}
-          {formMode === "create" && (
+          {formMode === "edit" && (
             <>
               <DialogHeader>
-                <DialogTitle className="text-base sm:text-lg">New Client</DialogTitle>
+                <DialogTitle className="text-base sm:text-lg">{form.id ? "Edit Appointment" : "New Appointment"}</DialogTitle>
               </DialogHeader>
 
-              <form onSubmit={handleSubmit} className="space-y-3">
+              <form onSubmit={handleSubmit} className="space-y-4">
                 <div>
-                  <Label className="text-xs sm:text-sm">Client</Label>
+                  <Label>Client Name</Label>
                   <Input value={form.clientName} onChange={(e) => setForm({ ...form, clientName: e.target.value })} required />
                 </div>
 
                 <div>
-                  <Label className="text-xs sm:text-sm">Sex</Label>
-                  <Select value={form.sex} onValueChange={(v) => setForm({ ...form, sex: v })}>
+                  <Label>Sex</Label>
+                  <Select value={form.sex} onValueChange={(val) => setForm({ ...form, sex: val as "male" | "female" })}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select sex" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Male">Male</SelectItem>
-                      <SelectItem value="Female">Female</SelectItem>
+                    <SelectContent className="bg-white shadow-md border rounded-md">
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div>
-                  <Label className="text-xs sm:text-sm">Date</Label>
+                  <Label>Age</Label>
+                  <Input type="number" value={form.age} onChange={(e) => setForm({ ...form, age: e.target.value })} required />
+                </div>
+
+                <div>
+                  <Label>Date</Label>
                   <Input type="date" value={form.preferredDate} onChange={(e) => setForm({ ...form, preferredDate: e.target.value })} required />
                 </div>
 
                 <div>
-                  <Label className="text-xs sm:text-sm">Time</Label>
+                  <Label>Time</Label>
                   <Input type="time" value={form.preferredTime} onChange={(e) => setForm({ ...form, preferredTime: e.target.value })} required />
                 </div>
 
                 <div>
-                  <Label className="text-xs sm:text-sm">Address</Label>
-                  <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+                  <Label>Description</Label>
+                  <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Describe the reason for appointment" rows={4} maxLength={500} required />
                 </div>
 
                 <div>
-                  <Label className="text-xs sm:text-sm">Assessment Summary</Label>
-                  <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Write your assessment..." />
+                  <Label>Address</Label>
+                  <Input type="text" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Enter address" required />
                 </div>
 
                 <div>
-                  <Label className="text-xs sm:text-sm">Status</Label>
-                  <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as ClientStatus })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Pending">Pending</SelectItem>
-                      <SelectItem value="Submitted">Submitted</SelectItem>
-                      <SelectItem value="Review">Review</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div>
-                  <Label className="text-xs sm:text-sm">Doctor Signature</Label>
-                  <div className="border rounded-md p-2 bg-white">
+                  <Label>Signature</Label>
+                  <div className="border rounded-md p-2">
                     <SignatureCanvas
                       ref={sigRef}
                       penColor="black"
                       canvasProps={{
-                        width: 500,
-                        height: 160,
-                        className: "border w-full h-[120px] sm:h-[160px]",
+                        width: 400,
+                        height: 150,
+                        className: "border w-full h-[150px]",
+                      }}
+                      onEnd={() => {
+                        if (sigRef.current) {
+                          const data = sigRef.current.getCanvas().toDataURL("image/png");
+                          setForm({ ...form, signature: data });
+                        }
                       }}
                       backgroundColor="white"
-                      onEnd={() => setForm({ ...form, signature: sigRef.current?.toDataURL() })}
                     />
                   </div>
                   <div className="flex justify-between mt-2">
@@ -397,18 +403,15 @@ export default function DoctorClientsList() {
                       onClick={() => {
                         sigRef.current?.clear();
                         setForm({ ...form, signature: "" });
-                      }}
-                      className="text-xs sm:text-sm">
+                      }}>
                       Clear
                     </Button>
                   </div>
                 </div>
 
-                <div className="pt-2">
-                  <Button type="submit" className="w-full text-sm sm:text-base bg-secondary cursor-pointer">
-                    Submit
-                  </Button>
-                </div>
+                <Button type="submit" className="w-full bg-secondary cursor-pointer">
+                  {form.id ? "Update Appointment" : "Add Appointment"}
+                </Button>
               </form>
             </>
           )}

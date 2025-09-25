@@ -94,9 +94,9 @@ const DoctorHeader = () => {
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center space-x-9">
             {/* <Link className={`hover:text-primary ${isActive('/doctor/dashboard') ? 'text-primary' : ''}`} href="/doctor/dashboard">Home</Link> */}
-            <Link className={`hover:text-primary ${isActive("/doctor/appointments") ? "text-primary" : ""}`} href="/doctor/appointments">
+            {/* <Link className={`hover:text-primary ${isActive("/doctor/appointments") ? "text-primary" : ""}`} href="/doctor/appointments">
               Appointments
-            </Link>
+            </Link> */}
             <Link className={`hover:text-primary ${isActive("/doctor/messaging") ? "text-primary" : ""}`} href="/doctor/messages">
               Messaging
             </Link>

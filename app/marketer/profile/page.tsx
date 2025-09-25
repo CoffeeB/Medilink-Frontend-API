@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Dna, Phone, Eye, EyeOff, Edit2, X } from "lucide-react";
+import { Calendar, Dna, Phone, Eye, EyeOff, Edit2, X, Upload, FileText, CreditCard, Shield } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import UpdateClientSignatureForm from "@/components/forms/UpdateClientSignatureForm";
@@ -11,9 +11,9 @@ import ChangePinForm from "@/components/forms/ChangePinForm";
 import AvatarUpload from "@/components/AvatarUpload";
 import Image from "next/image";
 import { format } from "date-fns";
-import { getProfile, updateProfile } from "@/hooks/profile"; // 🔑 add update function in backend
+import { getProfile, updateProfile } from "@/hooks/profile";
 
-export default function DoctorProfile() {
+export default function MarketerProfile() {
   const [profile, setProfile] = useState<any>(null);
   const [editableProfile, setEditableProfile] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -22,11 +22,14 @@ export default function DoctorProfile() {
   const [openClientSignature, setOpenClientSignature] = useState(false);
   const [openClientPin, setOpenClientPin] = useState(false);
   const [clientSignature, setClientSignature] = useState<string | null>(null);
+  const [uploadedFiles, setUploadedFiles] = useState<{
+    certificate?: File;
+    driversLicense?: File;
+    ssn?: File;
+    resume?: File;
+  }>({});
 
-  const handleClientPinChange = (oldPin: string, newPin: string) => {
-    console.log("Changing client PIN:", { oldPin, newPin });
-    // Add API call to change PIN here
-  };
+  const [isDragging, setIsDragging] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -42,6 +45,75 @@ export default function DoctorProfile() {
     };
     fetchProfileData();
   }, []);
+
+  const handleFileUpload = (field: keyof typeof uploadedFiles, file: File) => {
+    setUploadedFiles((prev) => ({ ...prev, [field]: file }));
+  };
+
+  const handleRemoveFile = (field: keyof typeof uploadedFiles) => {
+    setUploadedFiles((prev) => ({ ...prev, [field]: undefined }));
+  };
+
+  const renderFileSection = (field: keyof typeof uploadedFiles, icon: React.ReactNode, title: string) => (
+    <div
+      className={`border-2 border-dashed rounded-lg p-6 transition-colors bg-gray-100 ${isDragging === field ? "border-blue-500 bg-blue-50" : "border-gray-300 bg-gray-50"}`}
+      onDragOver={(e) => {
+        e.preventDefault();
+        setIsDragging(field);
+      }}
+      onDragLeave={() => setIsDragging(null)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setIsDragging(null);
+        const file = e.dataTransfer.files?.[0];
+        if (file) handleFileUpload(field, file);
+      }}>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          {icon}
+          <div>
+            <p className="text-sm font-medium text-gray-700">{title}</p>
+            <p className="text-xs text-gray-500">Drag & drop your file or click to upload</p>
+          </div>
+        </div>
+        <Button type="button" variant="secondary" size="sm" onClick={() => document.getElementById(field)?.click()}>
+          <Upload className="h-4 w-4 mr-2" />
+          {uploadedFiles[field] ? "Change" : "Upload"}
+        </Button>
+      </div>
+
+      <input
+        id={field}
+        type="file"
+        className="hidden"
+        accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) handleFileUpload(field, file);
+        }}
+      />
+
+      {/* Preview section */}
+      {uploadedFiles[field] && (
+        <div className="mt-4 flex items-center justify-between bg-white p-3 rounded-lg shadow-sm">
+          <div className="flex items-center space-x-3">
+            <div>
+              <p className="text-sm font-medium text-gray-700">{uploadedFiles[field]?.name}</p>
+              <p className="text-xs text-gray-500">{((uploadedFiles[field]?.size || 0) / 1024).toFixed(1)} KB</p>
+            </div>
+          </div>
+          <Button variant="ghost" size="sm" onClick={() => handleRemoveFile(field)}>
+            Remove
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+
+  const handleClientPinChange = (oldPin: string, newPin: string) => {
+    console.log("Changing client PIN:", { oldPin, newPin });
+    // Add API call to change PIN here
+  };
 
   const handleSave = async () => {
     try {
@@ -84,7 +156,7 @@ export default function DoctorProfile() {
             <CardTitle className="text-base sm:text-lg font-medium">Doctor Information</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 sm:space-y-4">
-            <div className="flex flex-col sm:flex-row sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+            <div className="flex sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-4">
               <AvatarUpload
                 onImageChange={(file, imageUrl) => {
                   console.log("Avatar changed:", file, imageUrl);
@@ -93,7 +165,7 @@ export default function DoctorProfile() {
                   }
                 }}
               />
-              <div className="flex flex-col text-center sm:text-left">
+              <div className="flex flex-wrap text-center sm:text-left">
                 {isEditing ? (
                   <>
                     <Input value={editableProfile?.firstname || ""} onChange={(e) => setEditableProfile({ ...editableProfile, firstname: e.target.value })} placeholder="First Name" className="mb-2" />
@@ -132,6 +204,13 @@ export default function DoctorProfile() {
                 </div>
               </div>
             </div>
+
+            {/* <div className="grid gap-6 ">
+              {renderFileSection("certificate", <FileText className="h-6 w-6 text-gray-400" />, "Certificate")}
+              {renderFileSection("driversLicense", <CreditCard className="h-6 w-6 text-gray-400" />, "Driver's License")}
+              {renderFileSection("ssn", <Shield className="h-6 w-6 text-gray-400" />, "SSN")}
+              {renderFileSection("resume", <FileText className="h-6 w-6 text-gray-400" />, "Resume")}
+            </div> */}
           </CardContent>
         </Card>
 

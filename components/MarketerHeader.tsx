@@ -43,8 +43,8 @@ const MarketerHeader = () => {
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center space-x-9">
-            <Link className={`hover:text-primary ${isActive("/marketer/appointments") ? "text-primary" : ""}`} href="/marketer/appointments">
-              Appointments
+            <Link className={`hover:text-primary ${isActive("/marketer/client") ? "text-primary" : ""}`} href="/marketer/client">
+              Clients
             </Link>
             <Link className={`hover:text-primary ${isActive("/marketer/messaging") ? "text-primary" : ""}`} href="/marketer/messages">
               Messaging

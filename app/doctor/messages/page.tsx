@@ -7,6 +7,7 @@ import ContactModal from "@/components/ContactModal";
 import Peer, { MediaConnection } from "peerjs";
 import Cookies from "js-cookie";
 import { format } from "date-fns";
+import { getProfileById } from "@/hooks/profile";
 
 interface Contact {
   email: string;
@@ -33,6 +34,7 @@ type CallState =
   | "video-connected" // call established
   | "ended" // after hangup
   | "unavailable" // peer not reachable
+  | "disconnected" // timed out after 2min
   | "no-answer"; // timed out after 2min
 
 // Simple emoji data
@@ -61,6 +63,8 @@ export default function ChatDashboard() {
   const [showSidebar, setShowSidebar] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [conversationId, setConversationId] = useState("");
+  const [isCaller, setIsCaller] = useState(false);
+  const [caller, setCaller] = useState<any>(null);
 
   // Call states
   const [callState, setCallState] = useState<CallState>("idle"); // idle, audio-calling, audio-connected, video-calling, video-connected
@@ -166,6 +170,15 @@ export default function ChatDashboard() {
 
     setPeer(newPeer);
 
+    // 🔌 Handle disconnects and try to reconnect
+    newPeer.on("disconnected", () => {
+      console.warn("⚠️ Disconnected from PeerJS server, attempting reconnect...");
+      setCallState("disconnected");
+
+      // trigger a reconnect
+      newPeer.reconnect();
+    });
+
     newPeer.on("error", (err) => {
       console.error("Peer error:", err);
       setCallState("unavailable");
@@ -186,13 +199,17 @@ export default function ChatDashboard() {
   }, []);
 
   useEffect(() => {
+    if (!callerId) return;
     const unlock = () => {
       if (ringToneRef.current) {
-        ringToneRef.current
+        const audio = ringToneRef.current;
+        audio.muted = true; // play muted first
+        audio
           .play()
           .then(() => {
-            ringToneRef.current!.pause();
-            ringToneRef.current!.currentTime = 0;
+            audio.pause();
+            audio.currentTime = 0;
+            audio.muted = false; // unmute for actual use later
             document.removeEventListener("click", unlock);
           })
           .catch((err) => console.warn("Unlock failed:", err));
@@ -201,7 +218,7 @@ export default function ChatDashboard() {
 
     document.addEventListener("click", unlock);
     return () => document.removeEventListener("click", unlock);
-  }, []);
+  }, [callerId]);
 
   // call state handler
   useEffect(() => {
@@ -228,6 +245,21 @@ export default function ChatDashboard() {
 
     return () => clearTimeout(timeout);
   }, [callState]);
+
+  useEffect(() => {
+    if (!callerId) return;
+    const getCallerInfo = async () => {
+      try {
+        const response = await getProfileById(callerId);
+        setCaller(response);
+      } catch (error) {
+        console.log(error);
+        endCall(true);
+      }
+    };
+
+    getCallerInfo();
+  }, [callerId]);
 
   useEffect(() => {
     if ((callState === "audio-calling" || callState === "video-calling") && callerId === loggedInUser?.id) {
@@ -353,6 +385,7 @@ export default function ChatDashboard() {
   };
 
   const startAudioCall = async (remoteId: string) => {
+    setIsCaller(true);
     // 🔊 Play dial tone immediately on button click
     if (dialToneRef.current) {
       dialToneRef.current.currentTime = 0;
@@ -426,6 +459,7 @@ export default function ChatDashboard() {
   };
 
   const startVideoCall = async (remoteId: string) => {
+    setIsCaller(true);
     // 🔊 Play dial tone immediately on button click
     if (dialToneRef.current) {
       dialToneRef.current.currentTime = 0;
@@ -534,6 +568,7 @@ export default function ChatDashboard() {
     stopCallTimer();
     setIsMuted(false);
     setIsVideoOff(false);
+    setIsCaller(false);
 
     // Stop local media
     if (localStreamRef.current) {
@@ -711,15 +746,18 @@ export default function ChatDashboard() {
   // Render call overlay
   const renderCallOverlay = () => {
     if (callState === "idle") return null;
+    if ((callState === "unavailable" && !isCaller) || (callState === "disconnected" && !isCaller)) return null;
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex flex-col items-center justify-center text-white">
         <div className="text-center mb-8">
-          <img src={selectedContact?.avatar} alt={selectedContact?.firstname} className="w-32 h-32 rounded-full mx-auto mb-4" />
-          <h2 className="text-2xl font-semibold mb-2">
+          <img src={isCaller ? selectedContact?.avatar : caller?.avatar} alt={isCaller ? selectedContact?.firstname : caller?.firstname} className="w-32 h-32 rounded-full mx-auto mb-4" />
+          {/* <h2 className="text-2xl font-semibold mb-2">
             {selectedContact?.firstname} {selectedContact?.lastname}
-          </h2>
-          <h3>{callerId}</h3>
+          </h2> */}
+          <h3>
+            {isCaller ? selectedContact?.firstname : caller?.firstname} {isCaller ? selectedContact?.lastname : caller?.lastname}
+          </h3>
           {callState === "audio-calling" || (callState === "video-calling" && <h3>Calling</h3>)}
           {callState === "audio-connected" || (callState === "video-connected" && <h3>In call</h3>)}
           {callState === "ended" && <h3>Call disconnected</h3>}
@@ -729,6 +767,7 @@ export default function ChatDashboard() {
             {callState === "video-connected" && formatCallDuration(callDuration)}
             {callState === "no-answer" && "Recipient did not pick up"}
             {callState === "unavailable" && "Recipient unavailable"}
+            {callState === "disconnected" && "Reconnecting..."}
           </p>
         </div>
 
@@ -808,7 +847,7 @@ export default function ChatDashboard() {
               <SquarePen className="w-4 h-4" />
             </button>
           </div>
-          <div className="relative">
+          {/* <div className="relative">
             <button className="p-2" onClick={() => setShowFilterDropdown(!showFilterDropdown)}>
               <ListFilter className="w-4 h-4" />
             </button>
@@ -828,7 +867,7 @@ export default function ChatDashboard() {
                 </button>
               </div>
             )}
-          </div>
+          </div> */}
         </div>
 
         {/* Contacts List */}
@@ -844,7 +883,7 @@ export default function ChatDashboard() {
               <div className="flex items-center space-x-3">
                 <div className="relative">
                   <img src={contact?.avatar || "/placeholder.svg"} alt={contact?.firstname} className="w-12 h-12 rounded-full object-cover bg-gray-200" />
-                  {contact?.online && <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div>}
+                  {contact?.online ? <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div> : <div className="absolute bottom-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-start">

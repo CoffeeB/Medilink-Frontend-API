@@ -18,9 +18,7 @@ export const editClientAppointmentAsDoctor = async (form: any) => {
   if (!token) {
     throw new Error("Token is required");
   }
-  const response = await axiosInstance.post("/api/appointments/doctor", {
-    form,
-  });
+  const response = await axiosInstance.post("/api/appointments/doctor", form);
   return response.data;
 };
 
@@ -29,9 +27,7 @@ export const editClientAppointmentAsMarketer = async (form: any) => {
   if (!token) {
     throw new Error("Token is required");
   }
-  const response = await axiosInstance.post("/api/appointments/marketer", {
-    form,
-  });
+  const response = await axiosInstance.post("/api/appointments/marketer", form);
   return response.data;
 };
 
@@ -83,9 +79,7 @@ export const createDoctorAppointment = async (form: any) => {
   }
 
   let response;
-  response = await axiosInstance.post(`/api/appointments/doctor`, {
-    form,
-  });
+  response = await axiosInstance.post(`/api/appointments/doctor`, form);
 
   console.log("response", response);
   return response?.data;
@@ -98,9 +92,7 @@ export const createMarketerAppointment = async (form: any) => {
   }
 
   let response;
-  response = await axiosInstance.post(`/api/appointments/marketer`, {
-    form,
-  });
+  response = await axiosInstance.post(`/api/appointments/marketer`, form);
 
   console.log("response", response);
   return response?.data;

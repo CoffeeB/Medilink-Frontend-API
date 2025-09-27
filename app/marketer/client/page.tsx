@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import SignatureCanvas from "react-signature-canvas";
 import { newForm } from "@/hooks/form";
-import { clientAppointments, createAppointment, editClientAppointment } from "@/hooks/appointments";
+import { marketerClientAppointments, createMarketerAppointment, editClientAppointmentAsMarketer } from "@/hooks/appointments";
 import { formatPreferredDate } from "@/utils/generalUtils";
 
 type ClientStatus = "Submitted" | "Pending" | "Review";
@@ -38,7 +38,7 @@ export default function MarketerClientsList() {
   const [diagnoses, setDiagnoses] = useState<any>();
   const [endDate, setEndDate] = useState("");
   const [open, setOpen] = useState(false);
-  const [formMode, setFormMode] = useState<"view" | "edit">("view");
+  const [formMode, setFormMode] = useState<"view" | "edit" | "create">("view");
   const [form, setForm] = useState<any>({
     clientName: "",
     sex: "",
@@ -53,7 +53,7 @@ export default function MarketerClientsList() {
   useEffect(() => {
     const getClientAppointments = async () => {
       try {
-        const response = await clientAppointments();
+        const response = await marketerClientAppointments();
         setDiagnoses(response);
       } catch (error) {
         console.log("error getting users", error);
@@ -110,7 +110,7 @@ export default function MarketerClientsList() {
 
     try {
       console.log("Confirming appointment with full payload:", payload);
-      await editClientAppointment(payload);
+      await editClientAppointmentAsMarketer(payload);
       setOpen(false);
     } catch (error) {
       console.error("Error updating appointment:", error);
@@ -120,18 +120,7 @@ export default function MarketerClientsList() {
   const canEdit = selected && (selected?.form?.status === "pending" || selected?.form?.status === "review");
 
   function handleAddAppointment() {
-    setForm({
-      id: "",
-      clientName: "",
-      sex: "",
-      age: "",
-      preferredDate: "",
-      preferredTime: "",
-      description: "",
-      address: "",
-      signature: "",
-    });
-    setFormMode("edit");
+    setFormMode("create");
     setOpen(true);
     setTimeout(() => sigRef.current?.clear(), 0);
   }
@@ -153,7 +142,7 @@ export default function MarketerClientsList() {
         address: form?.address,
       };
 
-      const response = await createAppointment(payload);
+      const response = await createMarketerAppointment(payload);
 
       // optionally close modal
       setOpen(false);
@@ -181,7 +170,7 @@ export default function MarketerClientsList() {
         <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-2 sm:space-y-0 pb-4">
           <CardTitle className="text-base sm:text-lg font-medium">Client</CardTitle>
           <Button onClick={() => handleAddAppointment()} className="cursor-pointer">
-            Add an Apt.
+            Add a Client
           </Button>
         </CardHeader>
         <CardContent>
@@ -236,10 +225,11 @@ export default function MarketerClientsList() {
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="w-[90vw] max-w-2xl max-h-[90vh] overflow-y-auto">
+          {/* VIEW MODE */}
           {selected && formMode === "view" && (
             <>
               <DialogHeader>
-                <DialogTitle className="text-base sm:text-lg">Appointment Details</DialogTitle>
+                <DialogTitle className="text-base sm:text-lg">Client Details</DialogTitle>
               </DialogHeader>
 
               <div className="space-y-3">
@@ -268,17 +258,6 @@ export default function MarketerClientsList() {
                     </p>
                   </>
                 )}
-                {selected?.form?.signature ? (
-                  <div>
-                    <b className="text-sm sm:text-base">Client Signature:</b>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={selected?.form?.signature} alt="Client Signature" className="mt-2 border rounded-md w-32 sm:w-40" />
-                  </div>
-                ) : (
-                  <p className="text-xs sm:text-sm text-muted-foreground">
-                    <b>Client Signature:</b> None
-                  </p>
-                )}
 
                 {canEdit && (
                   <>
@@ -305,7 +284,16 @@ export default function MarketerClientsList() {
                       <div className="lg:col-span-2">
                         <Label className="mb-1 block text-xs sm:text-sm">Doctor Signature</Label>
                         <div className="border rounded-md p-2 bg-white">
-                          <SignatureCanvas ref={sigRef} penColor="black" canvasProps={{ width: 500, height: 160, className: "border w-full h-[120px] sm:h-[160px]" }} backgroundColor="white" />
+                          <SignatureCanvas
+                            ref={sigRef}
+                            penColor="black"
+                            canvasProps={{
+                              width: 500,
+                              height: 160,
+                              className: "border w-full h-[120px] sm:h-[160px]",
+                            }}
+                            backgroundColor="white"
+                          />
                         </div>
                         <div className="flex justify-between mt-2">
                           <Button type="button" variant="outline" size="sm" onClick={() => sigRef.current?.clear()} className="text-xs sm:text-sm">
@@ -325,74 +313,80 @@ export default function MarketerClientsList() {
               </div>
             </>
           )}
-          {formMode === "edit" && (
+
+          {/* CREATE MODE */}
+          {formMode === "create" && (
             <>
               <DialogHeader>
-                <DialogTitle className="text-base sm:text-lg">{form.id ? "Edit Appointment" : "New Appointment"}</DialogTitle>
+                <DialogTitle className="text-base sm:text-lg">New Client</DialogTitle>
               </DialogHeader>
 
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-3">
                 <div>
-                  <Label>Client Name</Label>
+                  <Label className="text-xs sm:text-sm">Client</Label>
                   <Input value={form.clientName} onChange={(e) => setForm({ ...form, clientName: e.target.value })} required />
                 </div>
 
                 <div>
-                  <Label>Sex</Label>
-                  <Select value={form.sex} onValueChange={(val) => setForm({ ...form, sex: val as "male" | "female" })}>
+                  <Label className="text-xs sm:text-sm">Sex</Label>
+                  <Select value={form.sex} onValueChange={(v) => setForm({ ...form, sex: v })}>
                     <SelectTrigger>
                       <SelectValue placeholder="Select sex" />
                     </SelectTrigger>
-                    <SelectContent className="bg-white shadow-md border rounded-md">
-                      <SelectItem value="male">Male</SelectItem>
-                      <SelectItem value="female">Female</SelectItem>
+                    <SelectContent>
+                      <SelectItem value="Male">Male</SelectItem>
+                      <SelectItem value="Female">Female</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div>
-                  <Label>Age</Label>
-                  <Input type="number" value={form.age} onChange={(e) => setForm({ ...form, age: e.target.value })} required />
-                </div>
-
-                <div>
-                  <Label>Date</Label>
+                  <Label className="text-xs sm:text-sm">Date</Label>
                   <Input type="date" value={form.preferredDate} onChange={(e) => setForm({ ...form, preferredDate: e.target.value })} required />
                 </div>
 
                 <div>
-                  <Label>Time</Label>
+                  <Label className="text-xs sm:text-sm">Time</Label>
                   <Input type="time" value={form.preferredTime} onChange={(e) => setForm({ ...form, preferredTime: e.target.value })} required />
                 </div>
 
                 <div>
-                  <Label>Description</Label>
-                  <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Describe the reason for appointment" rows={4} maxLength={500} required />
+                  <Label className="text-xs sm:text-sm">Address</Label>
+                  <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
                 </div>
 
                 <div>
-                  <Label>Address</Label>
-                  <Input type="text" value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} placeholder="Enter address" required />
+                  <Label className="text-xs sm:text-sm">Assessment Summary</Label>
+                  <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Write your assessment..." />
                 </div>
 
                 <div>
-                  <Label>Signature</Label>
-                  <div className="border rounded-md p-2">
+                  <Label className="text-xs sm:text-sm">Status</Label>
+                  <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as ClientStatus })}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Pending">Pending</SelectItem>
+                      <SelectItem value="Submitted">Submitted</SelectItem>
+                      <SelectItem value="Review">Review</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label className="text-xs sm:text-sm">Doctor Signature</Label>
+                  <div className="border rounded-md p-2 bg-white">
                     <SignatureCanvas
                       ref={sigRef}
                       penColor="black"
                       canvasProps={{
-                        width: 400,
-                        height: 150,
-                        className: "border w-full h-[150px]",
-                      }}
-                      onEnd={() => {
-                        if (sigRef.current) {
-                          const data = sigRef.current.getCanvas().toDataURL("image/png");
-                          setForm({ ...form, signature: data });
-                        }
+                        width: 500,
+                        height: 160,
+                        className: "border w-full h-[120px] sm:h-[160px]",
                       }}
                       backgroundColor="white"
+                      onEnd={() => setForm({ ...form, signature: sigRef.current?.toDataURL() })}
                     />
                   </div>
                   <div className="flex justify-between mt-2">
@@ -403,15 +397,18 @@ export default function MarketerClientsList() {
                       onClick={() => {
                         sigRef.current?.clear();
                         setForm({ ...form, signature: "" });
-                      }}>
+                      }}
+                      className="text-xs sm:text-sm">
                       Clear
                     </Button>
                   </div>
                 </div>
 
-                <Button type="submit" className="w-full bg-secondary cursor-pointer">
-                  {form.id ? "Update Appointment" : "Add Appointment"}
-                </Button>
+                <div className="pt-2">
+                  <Button type="submit" className="w-full text-sm sm:text-base bg-secondary cursor-pointer">
+                    Submit
+                  </Button>
+                </div>
               </form>
             </>
           )}

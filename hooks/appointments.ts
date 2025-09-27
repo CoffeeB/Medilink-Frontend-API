@@ -13,12 +13,23 @@ export const newAppointment = async (formId: any, date: any) => {
   return response.data;
 };
 
-export const editClientAppointment = async (form: any) => {
+export const editClientAppointmentAsDoctor = async (form: any) => {
   const token = Cookies.get("token");
   if (!token) {
     throw new Error("Token is required");
   }
   const response = await axiosInstance.post("/api/appointments/doctor", {
+    form,
+  });
+  return response.data;
+};
+
+export const editClientAppointmentAsMarketer = async (form: any) => {
+  const token = Cookies.get("token");
+  if (!token) {
+    throw new Error("Token is required");
+  }
+  const response = await axiosInstance.post("/api/appointments/marketer", {
     form,
   });
   return response.data;
@@ -65,7 +76,7 @@ export const confirmAppointment = async (formId: string) => {
   return response?.data;
 };
 
-export const createAppointment = async (form: any) => {
+export const createDoctorAppointment = async (form: any) => {
   const token = Cookies.get("token");
   if (!token) {
     throw new Error("Token is required");
@@ -73,6 +84,21 @@ export const createAppointment = async (form: any) => {
 
   let response;
   response = await axiosInstance.post(`/api/appointments/doctor`, {
+    form,
+  });
+
+  console.log("response", response);
+  return response?.data;
+};
+
+export const createMarketerAppointment = async (form: any) => {
+  const token = Cookies.get("token");
+  if (!token) {
+    throw new Error("Token is required");
+  }
+
+  let response;
+  response = await axiosInstance.post(`/api/appointments/marketer`, {
     form,
   });
 
@@ -89,6 +115,23 @@ export const clientAppointments = async () => {
   let response;
 
   response = await axiosInstance.get("/api/appointments/doctor", {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return response?.data;
+};
+
+export const marketerClientAppointments = async () => {
+  const token = Cookies.get("token");
+  if (!token) {
+    throw new Error("Token is required");
+  }
+
+  let response;
+
+  response = await axiosInstance.get("/api/appointments/marketer", {
     headers: {
       Authorization: `Bearer ${token}`,
     },

@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import SignatureCanvas from "react-signature-canvas";
 import { newForm } from "@/hooks/form";
-import { clientAppointments, createAppointment, editClientAppointment } from "@/hooks/appointments";
+import { clientAppointments, createDoctorAppointment, editClientAppointmentAsDoctor } from "@/hooks/appointments";
 import { formatPreferredDate } from "@/utils/generalUtils";
 
 type ClientStatus = "Submitted" | "Pending" | "Review";
@@ -110,7 +110,7 @@ export default function DoctorClientsList() {
 
     try {
       console.log("Confirming appointment with full payload:", payload);
-      await editClientAppointment(payload);
+      await editClientAppointmentAsDoctor(payload);
       setOpen(false);
     } catch (error) {
       console.error("Error updating appointment:", error);
@@ -142,7 +142,7 @@ export default function DoctorClientsList() {
         address: form?.address,
       };
 
-      const response = await createAppointment(payload);
+      const response = await createDoctorAppointment(payload);
 
       // optionally close modal
       setOpen(false);

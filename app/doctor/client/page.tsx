@@ -356,6 +356,11 @@ export default function DoctorClientsList() {
                 </div>
 
                 <div>
+                  <Label className="text-xs sm:text-sm">Description</Label>
+                  <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Write your assessment..." />
+                </div>
+
+                <div>
                   <Label className="text-xs sm:text-sm">Assessment Summary</Label>
                   <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Write your assessment..." />
                 </div>

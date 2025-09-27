@@ -136,22 +136,6 @@ export default function RegisterADoctor() {
 
                     <FormField
                       control={form.control}
-                      name="dateOfBirth"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-gray-700 font-medium">Date of Birth</FormLabel>
-                          <FormControl>
-                            <div className="relative">
-                              <Input placeholder="dd/mm/yyyy" type="date" {...field} />
-                            </div>
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
                       name="middlename"
                       render={({ field }) => (
                         <FormItem>
@@ -168,13 +152,13 @@ export default function RegisterADoctor() {
 
                     <FormField
                       control={form.control}
-                      name="phone"
+                      name="lastname"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-gray-700 font-medium">Phone Number</FormLabel>
+                          <FormLabel className="text-gray-700 font-medium">Last name</FormLabel>
                           <FormControl>
                             <div className="relative">
-                              <Input placeholder="Enter Phone number" type="tel" {...field} />
+                              <Input placeholder="Enter last name" type="text" {...field} />
                             </div>
                           </FormControl>
                           <FormMessage />
@@ -184,13 +168,29 @@ export default function RegisterADoctor() {
 
                     <FormField
                       control={form.control}
-                      name="lastname"
+                      name="dateOfBirth"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel className="text-gray-700 font-medium">Last name</FormLabel>
+                          <FormLabel className="text-gray-700 font-medium">Date of Birth</FormLabel>
                           <FormControl>
                             <div className="relative">
-                              <Input placeholder="Enter last name" type="text" {...field} />
+                              <Input placeholder="dd/mm/yyyy" type="date" {...field} />
+                            </div>
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="phone"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-gray-700 font-medium">Phone Number</FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Input placeholder="Enter Phone number" type="tel" {...field} />
                             </div>
                           </FormControl>
                           <FormMessage />

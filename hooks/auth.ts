@@ -88,3 +88,8 @@ export const sendResetPassword = async (data: { password: string; token: string 
   });
   return response.data;
 };
+
+export const marketerSignUp = async (data: any) => {
+  const response = await axiosInstance.post("/api/auth/signup", data);
+  return response.data;
+};

@@ -94,7 +94,7 @@ export default function DoctorClientsList() {
       id: selected?.form?._id,
 
       // doctor-related data
-      assessment,
+      // assessment,
       status: statusSel,
       signature: doctorSignature,
 
@@ -102,8 +102,8 @@ export default function DoctorClientsList() {
       clientName: selected?.form?.clientName,
       sex: selected?.form?.sex,
       age: selected?.form?.age,
-      preferredDate: selected?.form?.preferredDate,
-      preferredTime: selected?.form?.preferredTime,
+      date: selected?.form?.preferredDate,
+      time: selected?.form?.preferredTime,
       description: selected?.form?.description,
       address: selected?.form?.address,
     };
@@ -138,7 +138,7 @@ export default function DoctorClientsList() {
         age: form?.age,
         date: form?.preferredDate,
         time: form?.preferredTime,
-        details: form?.description,
+        description: form?.description,
         address: form?.address,
       };
 
@@ -356,13 +356,8 @@ export default function DoctorClientsList() {
                 </div>
 
                 <div>
-                  <Label className="text-xs sm:text-sm">Description</Label>
-                  <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Write your assessment..." />
-                </div>
-
-                <div>
                   <Label className="text-xs sm:text-sm">Assessment Summary</Label>
-                  <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Write your assessment..." />
+                  <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Write your assessment..." required />
                 </div>
 
                 <div>

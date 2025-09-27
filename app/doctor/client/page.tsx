@@ -14,7 +14,6 @@ import { Button } from "@/components/ui/button";
 import SignatureCanvas from "react-signature-canvas";
 import { newForm } from "@/hooks/form";
 import { clientAppointments, createDoctorAppointment, editClientAppointmentAsDoctor } from "@/hooks/appointments";
-import { formatPreferredDate } from "@/utils/generalUtils";
 
 type ClientStatus = "Submitted" | "Pending" | "Review";
 
@@ -35,7 +34,7 @@ export default function DoctorClientsList() {
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [startDate, setStartDate] = useState("");
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [diagnoses, setDiagnoses] = useState<any>();
+  const [diagnoses, setDiagnoses] = useState<any[]>([]);
   const [endDate, setEndDate] = useState("");
   const [open, setOpen] = useState(false);
   const [formMode, setFormMode] = useState<"view" | "edit" | "create">("view");
@@ -43,8 +42,8 @@ export default function DoctorClientsList() {
     clientName: "",
     sex: "",
     age: "",
-    preferredDate: "",
-    preferredTime: "",
+    date: "",
+    time: "",
     description: "",
     address: "",
     signature: "",
@@ -64,8 +63,8 @@ export default function DoctorClientsList() {
   }, []);
 
   const filteredDiagnoses = diagnoses?.filter((diagnosis: any) => {
-    const matchesSearch = diagnosis?.form?.clientName?.toLowerCase().includes(searchTerm.toLowerCase()) || diagnosis?.form?.status?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDateRange = (!startDate || diagnosis?.form?.preferredDate >= startDate) && (!endDate || diagnosis?.form?.preferredDate <= endDate);
+    const matchesSearch = diagnosis?.client?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || diagnosis?.status?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesDateRange = (!startDate || diagnosis?.date >= startDate) && (!endDate || diagnosis?.date <= endDate);
     return matchesSearch && matchesDateRange;
   });
 
@@ -91,7 +90,7 @@ export default function DoctorClientsList() {
 
     const payload = {
       // keep appointment id so backend knows which to update
-      id: selected?.form?._id,
+      id: selected?._id,
 
       // doctor-related data
       // assessment,
@@ -99,13 +98,13 @@ export default function DoctorClientsList() {
       signature: doctorSignature,
 
       // include all form fields from patient appointment
-      clientName: selected?.form?.clientName,
-      sex: selected?.form?.sex,
-      age: selected?.form?.age,
-      date: selected?.form?.preferredDate,
-      time: selected?.form?.preferredTime,
-      description: selected?.form?.description,
-      address: selected?.form?.address,
+      clientName: selected?.clientName,
+      sex: selected?.sex,
+      age: selected?.age,
+      date: selected?.date,
+      time: selected?.time,
+      description: selected?.description,
+      address: selected?.address,
     };
 
     try {
@@ -117,7 +116,7 @@ export default function DoctorClientsList() {
     }
   };
 
-  const canEdit = selected && (selected?.form?.status === "pending" || selected?.form?.status === "review");
+  const canEdit = selected && (selected?.status === "pending" || selected?.status === "review");
 
   function handleAddAppointment() {
     setFormMode("create");
@@ -136,16 +135,18 @@ export default function DoctorClientsList() {
         clientName: form?.clientName,
         sex: form?.sex,
         age: form?.age,
-        date: form?.preferredDate,
-        time: form?.preferredTime,
+        date: form?.date,
+        time: form?.time,
         description: form?.description,
         address: form?.address,
       };
 
       const response = await createDoctorAppointment(payload);
 
+      const clientDiagnoses = response?.appointment;
       // optionally close modal
       setOpen(false);
+      setDiagnoses((prev) => [...prev, clientDiagnoses]);
 
       // reset form
       setForm({
@@ -153,8 +154,8 @@ export default function DoctorClientsList() {
         clientName: "",
         sex: "",
         age: "",
-        preferredDate: "",
-        preferredTime: "",
+        date: "",
+        time: "",
         description: "",
         address: "",
         signature: "",
@@ -183,7 +184,7 @@ export default function DoctorClientsList() {
             </div>
             <div className="flex items-center gap-2">
               <span className="text-xs sm:text-sm text-muted-foreground">
-                Showing {filteredDiagnoses?.length} of {diagnoses?.form?.length} clients
+                Showing {filteredDiagnoses?.length} of {diagnoses?.length} clients
               </span>
             </div>
           </div>
@@ -206,13 +207,13 @@ export default function DoctorClientsList() {
                   </TableRow>
                 ) : (
                   filteredDiagnoses
-                    ?.filter((d: any) => d?.form?.clientName && d?.form?.preferredDate && d?.form?.status)
+                    ?.filter((d: any) => d?.client?.name && d?.date && d?.status)
                     ?.map((diagnosis: any, index: any) => (
                       <TableRow key={index} className="cursor-pointer hover:bg-accent" onClick={() => handleRowClick(diagnosis)}>
-                        <TableCell className="text-xs sm:text-sm">{new Date(diagnosis?.form?.preferredDate).toLocaleDateString()}</TableCell>
-                        <TableCell className="text-xs sm:text-sm">{diagnosis?.form?.clientName}</TableCell>
+                        <TableCell className="text-xs sm:text-sm">{diagnosis?.date}</TableCell>
+                        <TableCell className="text-xs sm:text-sm">{diagnosis?.client?.name}</TableCell>
                         <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${diagnosis?.form?.status === "accepted" ? "bg-green-100 text-green-800" : diagnosis?.form?.status === "pending" ? "bg-yellow-100 text-yellow-800" : "bg-blue-100 text-blue-800"}`}>{diagnosis?.form?.status}</span>
+                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${diagnosis?.status === "accepted" ? "bg-green-100 text-green-800" : diagnosis?.status === "pending" ? "bg-yellow-100 text-yellow-800" : "bg-blue-100 text-blue-800"}`}>{diagnosis?.status}</span>
                         </TableCell>
                       </TableRow>
                     ))
@@ -234,27 +235,27 @@ export default function DoctorClientsList() {
 
               <div className="space-y-3">
                 <p className="text-sm sm:text-base">
-                  <b>Client:</b> {selected?.form?.clientName}
+                  <b>Client:</b> {selected?.client?.name}
                 </p>
                 <p className="text-sm sm:text-base">
-                  <b>Sex:</b> {selected?.form?.sex ?? "—"}
+                  <b>Sex:</b> {selected?.sex ?? "—"}
                 </p>
                 <p className="text-sm sm:text-base">
-                  <b>Date:</b> {selected?.form?.preferredDate}
+                  <b>Date:</b> {selected?.date}
                 </p>
                 <p className="text-sm sm:text-base">
-                  <b>Time:</b> {selected?.form?.preferredTime ?? "—"}
+                  <b>Time:</b> {selected?.time ?? "—"}
                 </p>
                 <p className="text-sm sm:text-base">
-                  <b>Address:</b> {selected?.form?.address ?? "—"}
+                  <b>Address:</b> {selected?.address ?? "—"}
                 </p>
-                {selected?.form?.status === "submitted" && (
+                {selected?.status === "submitted" && (
                   <>
                     <p className="text-sm sm:text-base">
-                      <b>Assessment Summary:</b> {selected?.form?.assessment ?? "—"}
+                      <b>Assessment Summary:</b> {selected?.assessment ?? "—"}
                     </p>
                     <p className="text-sm sm:text-base">
-                      <b>Status:</b> {selected?.form?.status}
+                      <b>Status:</b> {selected?.status}
                     </p>
                   </>
                 )}
@@ -269,7 +270,7 @@ export default function DoctorClientsList() {
 
                       <div>
                         <Label className="mb-1 block text-xs sm:text-sm">Status</Label>
-                        <Select defaultValue={selected?.form?.status || ""} value={statusSel} onValueChange={(v) => setStatusSel(v as ClientStatus)}>
+                        <Select defaultValue={selected?.status || ""} value={statusSel} onValueChange={(v) => setStatusSel(v as ClientStatus)}>
                           <SelectTrigger className="text-sm sm:text-base text-black">
                             <SelectValue className="text-black" placeholder="Select status" />
                           </SelectTrigger>
@@ -342,12 +343,12 @@ export default function DoctorClientsList() {
 
                 <div>
                   <Label className="text-xs sm:text-sm">Date</Label>
-                  <Input type="date" value={form.preferredDate} onChange={(e) => setForm({ ...form, preferredDate: e.target.value })} required />
+                  <Input type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required />
                 </div>
 
                 <div>
                   <Label className="text-xs sm:text-sm">Time</Label>
-                  <Input type="time" value={form.preferredTime} onChange={(e) => setForm({ ...form, preferredTime: e.target.value })} required />
+                  <Input type="time" value={form.time} onChange={(e) => setForm({ ...form, time: e.target.value })} required />
                 </div>
 
                 <div>

@@ -333,7 +333,7 @@ export default function DoctorClientsList() {
                     <SelectTrigger>
                       <SelectValue placeholder="Select sex" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white">
                       <SelectItem value="Male">Male</SelectItem>
                       <SelectItem value="Female">Female</SelectItem>
                     </SelectContent>
@@ -371,7 +371,7 @@ export default function DoctorClientsList() {
                     <SelectTrigger>
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white">
                       <SelectItem value="Pending">Pending</SelectItem>
                       <SelectItem value="Submitted">Submitted</SelectItem>
                       <SelectItem value="Review">Review</SelectItem>

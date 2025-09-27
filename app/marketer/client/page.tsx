@@ -262,7 +262,7 @@ export default function MarketerClientsList() {
                 {canEdit && (
                   <>
                     <div className="grid grid-cols-1 lg:grid-cols-2 gap-3 sm:gap-4 pt-2">
-                      <div className="lg:col-span-2">
+                      {/* <div className="lg:col-span-2">
                         <Label className="mb-1 block text-xs sm:text-sm">Assessment Summary</Label>
                         <Textarea value={assessment} onChange={(e) => setAssessment(e.target.value)} placeholder="Write your assessment..." className="min-h-24 sm:min-h-28 text-sm sm:text-base" />
                       </div>
@@ -279,10 +279,10 @@ export default function MarketerClientsList() {
                             <SelectItem value="Review">Review</SelectItem>
                           </SelectContent>
                         </Select>
-                      </div>
+                      </div> */}
 
                       <div className="lg:col-span-2">
-                        <Label className="mb-1 block text-xs sm:text-sm">Doctor Signature</Label>
+                        <Label className="mb-1 block text-xs sm:text-sm">Marketer Signature</Label>
                         <div className="border rounded-md p-2 bg-white">
                           <SignatureCanvas
                             ref={sigRef}
@@ -333,7 +333,7 @@ export default function MarketerClientsList() {
                     <SelectTrigger>
                       <SelectValue placeholder="Select sex" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="bg-white">
                       <SelectItem value="Male">Male</SelectItem>
                       <SelectItem value="Female">Female</SelectItem>
                     </SelectContent>
@@ -355,7 +355,7 @@ export default function MarketerClientsList() {
                   <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
                 </div>
 
-                <div>
+                {/* <div>
                   <Label className="text-xs sm:text-sm">Assessment Summary</Label>
                   <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Write your assessment..." />
                 </div>
@@ -372,10 +372,10 @@ export default function MarketerClientsList() {
                       <SelectItem value="Review">Review</SelectItem>
                     </SelectContent>
                   </Select>
-                </div>
+                </div> */}
 
                 <div>
-                  <Label className="text-xs sm:text-sm">Doctor Signature</Label>
+                  <Label className="text-xs sm:text-sm">Marketer Signature</Label>
                   <div className="border rounded-md p-2 bg-white">
                     <SignatureCanvas
                       ref={sigRef}

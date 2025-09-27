@@ -84,9 +84,9 @@ const MarketerHeader = () => {
         {/* Mobile Nav */}
         {mobileOpen && (
           <nav className="md:hidden bg-white border-t flex flex-col space-y-2 px-6 py-4">
-            <Link onClick={() => setMobileOpen(false)} href="/marketer/appointments" className={`hover:text-primary ${isActive("/marketer/appointments") ? "text-primary" : ""}`}>
+            {/* <Link onClick={() => setMobileOpen(false)} href="/marketer/appointments" className={`hover:text-primary ${isActive("/marketer/appointments") ? "text-primary" : ""}`}>
               Appointments
-            </Link>
+            </Link> */}
             <Link onClick={() => setMobileOpen(false)} href="/marketer/messages" className={`hover:text-primary ${isActive("/marketer/messages") ? "text-primary" : ""}`}>
               Messaging
             </Link>

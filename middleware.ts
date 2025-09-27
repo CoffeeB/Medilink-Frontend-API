@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 // Explicit public routes
-const publicPaths = ["/", "/doctor/login", "/marketer/login"];
+const publicPaths = ["/", "/doctor/login", "/marketer/login", "/marketer/register"];
 
 export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;

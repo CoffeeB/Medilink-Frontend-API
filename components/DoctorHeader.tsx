@@ -156,9 +156,9 @@ const DoctorHeader = () => {
         {/* Mobile Nav */}
         {mobileOpen && (
           <nav className="md:hidden bg-white border-t flex flex-col space-y-2 px-6 py-4">
-            <Link onClick={() => setMobileOpen(false)} href="/doctor/appointments" className={`hover:text-primary ${isActive("/doctor/appointments") ? "text-primary" : ""}`}>
+            {/* <Link onClick={() => setMobileOpen(false)} href="/doctor/appointments" className={`hover:text-primary ${isActive("/doctor/appointments") ? "text-primary" : ""}`}>
               Appointments
-            </Link>
+            </Link> */}
             <Link onClick={() => setMobileOpen(false)} href="/doctor/messages" className={`hover:text-primary ${isActive("/doctor/messages") ? "text-primary" : ""}`}>
               Messaging
             </Link>

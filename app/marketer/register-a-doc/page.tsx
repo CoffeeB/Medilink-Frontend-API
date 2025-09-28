@@ -90,7 +90,7 @@ export default function RegisterADoctor() {
       console.log("Signup initiated");
       const payload = { ...data, role: "doctor" };
       const response = await registerDoctor(payload);
-      router.push("/marketer/messages");
+      router.push("/pending-approval");
     } catch (error: any) {
       console.log("Registration error:", error.message);
     } finally {

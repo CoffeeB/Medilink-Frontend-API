@@ -40,7 +40,9 @@ export default function DoctorLogin() {
     try {
       const { user } = await login(data);
 
-      if (user.role === "doctor") {
+      if (user.role === "doctor" && user?.status != "approved") {
+        router.push("/pending-approval");
+      } else if (user.role === "doctor" && user?.status === "approved") {
         router.push("/doctor/messages");
       } else {
         setError("Unauthorized access. Please log in as a doctor.");

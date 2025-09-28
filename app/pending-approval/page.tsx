@@ -1,8 +1,17 @@
+"use client";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
+import { logout } from "@/hooks/auth";
+import { useRouter } from "next/navigation";
 
 export default function PendingApproval() {
+  const router = useRouter();
+
+  const handleReturnHome = () => {
+    logout();
+    router.push("/");
+  };
   return (
     <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 bg-gray-50">
       <main className="flex flex-col gap-5 row-start-2 items-center sm:items-start text-center sm:text-left">
@@ -12,9 +21,9 @@ export default function PendingApproval() {
 
         <p className="max-w-md text-gray-600 text-sm sm:text-base">Your account has been created but is not yet approved. Our admin team will review your information and reach out to you once your account has been approved. You’ll receive a notification when it’s ready.</p>
 
-        <Link href="/">
-          <Button className="mt-4 bg-secondary cursor-pointer">Return to Home</Button>
-        </Link>
+        <Button onClick={handleReturnHome} className="mt-4 bg-secondary cursor-pointer">
+          Return to Home
+        </Button>
       </main>
     </div>
   );

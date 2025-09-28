@@ -306,6 +306,8 @@ export default function ChatDashboard() {
       try {
         const messageHistory = await contactMessageHistory(conversationId);
         setMessages(messageHistory);
+        const getPeerIdResponse = await fetchPeerId(selectedContact?._id);
+        setRecipientPeerId(getPeerIdResponse?.peerId);
       } catch (error: any) {
         console.error(error);
       }

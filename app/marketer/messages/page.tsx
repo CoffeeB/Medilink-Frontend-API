@@ -120,8 +120,8 @@ export default function ChatDashboard() {
     // Call immediately on mount
     fetchContacts();
 
-    // Poll every 10 seconds
-    const interval = setInterval(fetchContacts, 10000);
+    // Poll every 5 seconds
+    const interval = setInterval(fetchContacts, 5000);
 
     // Cleanup on unmount
     return () => clearInterval(interval);

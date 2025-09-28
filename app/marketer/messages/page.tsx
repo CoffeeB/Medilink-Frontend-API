@@ -91,6 +91,7 @@ export default function ChatDashboard() {
   const unansweredTimeoutRef = useRef<any>(null);
   const dialToneRef = useRef<HTMLAudioElement | null>(null);
   const ringToneRef = useRef<HTMLAudioElement | null>(null);
+  const dataConnRef = useRef<any>(null);
 
   // Responsive handling
   useEffect(() => {
@@ -157,12 +158,14 @@ export default function ChatDashboard() {
         console.log("Caller ended before I accepted");
         setCallState("ended");
         stopCallTimer();
+        endCall(true);
       });
 
       call.on("error", (err) => {
         console.error("Call error (callee side):", err);
         setCallState("unavailable");
         stopCallTimer();
+        endCall(true);
       });
 
       //  play ringtone here
@@ -210,7 +213,7 @@ export default function ChatDashboard() {
   }, []);
 
   useEffect(() => {
-    if (!callerId) return;
+    if (!callerId && callState !== "audio-calling" && callState !== "video-calling") return;
     const unlock = () => {
       if (ringToneRef.current) {
         const audio = ringToneRef.current;
@@ -229,7 +232,7 @@ export default function ChatDashboard() {
 
     document.addEventListener("click", unlock);
     return () => document.removeEventListener("click", unlock);
-  }, [callerId]);
+  }, [callerId, callState]);
 
   // call state handler
   useEffect(() => {
@@ -262,9 +265,10 @@ export default function ChatDashboard() {
 
   useEffect(() => {
     if (!callerId) return;
+    console.log(callerId);
     const getCallerInfo = async () => {
       try {
-        const response = await getProfileById(callerId);
+        const response = await getProfileById(callerId.split("-")[0]);
         setCaller(response);
       } catch (error) {
         console.log(error);
@@ -352,9 +356,9 @@ export default function ChatDashboard() {
   };
 
   // Auto-scroll to bottom of messages
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  // useEffect(() => {
+  //   messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  // }, []);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -421,6 +425,20 @@ export default function ChatDashboard() {
     setCallDuration(0);
   };
 
+  const handleSignal = (msg: any) => {
+    console.log("📩 Received signal:", msg);
+
+    if (msg.type === "end-call") {
+      console.log("🔴 Remote ended the call");
+      endCall(true);
+    }
+
+    if (msg.type === "decline-call") {
+      console.log("❌ Remote declined the call");
+      endCall(true);
+    }
+  };
+
   const startAudioCall = async (remoteId: string) => {
     setIsCaller(true);
     // 🔊 Play dial tone immediately on button click
@@ -468,30 +486,16 @@ export default function ChatDashboard() {
           endCall(true);
         }
       }, 60000);
+
+      dataConnRef.current = peer.connect(remoteId);
+      dataConnRef.current.on("open", () => {
+        console.log("📡 Data channel open with", remoteId);
+      });
+
+      dataConnRef.current.on("data", (msg: any) => handleSignal(msg));
     } catch (err) {
       console.error("Audio call error:", err);
       setCallState("idle");
-    }
-  };
-
-  const playRingtone = () => {
-    if (ringToneRef.current) {
-      ringToneRef.current.currentTime = 0;
-      ringToneRef.current.play().catch(() => {});
-    }
-  };
-
-  const stopDialtone = () => {
-    if (dialToneRef.current) {
-      dialToneRef.current.pause();
-      dialToneRef.current.currentTime = 0;
-    }
-  };
-
-  const stopRingtone = () => {
-    if (ringToneRef.current) {
-      ringToneRef.current.pause();
-      ringToneRef.current.currentTime = 0;
     }
   };
 
@@ -553,6 +557,27 @@ export default function ChatDashboard() {
     }
   };
 
+  const playRingtone = () => {
+    if (ringToneRef.current) {
+      ringToneRef.current.currentTime = 0;
+      ringToneRef.current.play().catch(() => {});
+    }
+  };
+
+  const stopDialtone = () => {
+    if (dialToneRef.current) {
+      dialToneRef.current.pause();
+      dialToneRef.current.currentTime = 0;
+    }
+  };
+
+  const stopRingtone = () => {
+    if (ringToneRef.current) {
+      ringToneRef.current.pause();
+      ringToneRef.current.currentTime = 0;
+    }
+  };
+
   const acceptCall = async () => {
     if (!incomingCallRef.current) return;
 
@@ -590,42 +615,51 @@ export default function ChatDashboard() {
   };
 
   const declineCall = () => {
-    // Decline incoming call before answering
+    if (dataConnRef.current?.open) {
+      dataConnRef.current.send({ type: "decline-call" });
+    }
+
     if (incomingCallRef.current) {
-      incomingCallRef.current.close(); // tells caller "call rejected"
+      incomingCallRef.current.close();
       incomingCallRef.current = null;
     }
 
     stopDialtone();
-    endCall(true); // ensures cleanup + state reset
+    endCall(true);
   };
 
   const endCall = (forceEnded = false) => {
+    if (dataConnRef.current?.open) {
+      dataConnRef.current.send({ type: "end-call" });
+    }
+
     setCallState(forceEnded ? "ended" : "idle");
     stopCallTimer();
     setIsMuted(false);
     setIsVideoOff(false);
     setIsCaller(false);
 
-    // Stop local media
     if (localStreamRef.current) {
       localStreamRef.current.getTracks().forEach((t) => t.stop());
       localStreamRef.current = null;
     }
 
-    // Reset video refs
     if (localVideoRef.current) localVideoRef.current.srcObject = null;
     if (remoteVideoRef.current) remoteVideoRef.current.srcObject = null;
 
-    // Close peer connections
     if (connRef.current) {
-      connRef.current.close(); // triggers `call.on("close")` on the other peer
+      connRef.current.close();
       connRef.current = null;
     }
 
     if (incomingCallRef.current) {
-      incomingCallRef.current.close(); // if call was ringing but never answered
+      incomingCallRef.current.close();
       incomingCallRef.current = null;
+    }
+
+    if (dataConnRef.current) {
+      dataConnRef.current.close();
+      dataConnRef.current = null;
     }
 
     stopRingtone();
@@ -877,7 +911,7 @@ export default function ChatDashboard() {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex flex-col items-center justify-center text-white">
         <div className="text-center mb-8">
-          <img src={isCaller ? selectedContact?.avatar : caller?.avatar} alt={isCaller ? selectedContact?.firstname : caller?.firstname} className="w-32 h-32 rounded-full mx-auto mb-4" />
+          <img src={isCaller ? selectedContact?.avatar : caller?.avatar || "/images/Blank_Profile.jpg"} alt={isCaller ? selectedContact?.firstname : caller?.firstname} className="w-32 h-32 rounded-full mx-auto mb-4" />
           {/* <h2 className="text-2xl font-semibold mb-2">
             {selectedContact?.firstname} {selectedContact?.lastname}
           </h2> */}

@@ -165,19 +165,19 @@ export default function MarketerProfile() {
                   }
                 }}
               />
-              <div className="flex flex-wrap text-center sm:text-left">
+              <div className="flex flex-col text-center sm:text-left">
                 {isEditing ? (
                   <>
                     <Input value={editableProfile?.firstname || ""} onChange={(e) => setEditableProfile({ ...editableProfile, firstname: e.target.value })} placeholder="First Name" className="mb-2" />
                     <Input value={editableProfile?.lastname || ""} onChange={(e) => setEditableProfile({ ...editableProfile, lastname: e.target.value })} placeholder="Last Name" />
-                    <Input value={editableProfile?.address || ""} onChange={(e) => setEditableProfile({ ...editableProfile, address: e.target.value })} placeholder="Address" className="mt-2" />
+                    <Input value={`${editableProfile?.addressString}` || ""} onChange={(e) => setEditableProfile({ ...editableProfile, address: e.target.value })} placeholder="Address" className="mt-2" />
                   </>
                 ) : (
                   <>
                     <h3 className="font-semibold text-secondary text-base sm:text-lg">
                       {profile?.firstname} {profile?.lastname}
                     </h3>
-                    <p className="text-xs sm:text-sm text-muted-foreground">{profile?.address}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">{profile?.address?.addressString}</p>
                   </>
                 )}
               </div>
@@ -204,13 +204,6 @@ export default function MarketerProfile() {
                 </div>
               </div>
             </div>
-
-            {/* <div className="grid gap-6 ">
-              {renderFileSection("certificate", <FileText className="h-6 w-6 text-gray-400" />, "Certificate")}
-              {renderFileSection("driversLicense", <CreditCard className="h-6 w-6 text-gray-400" />, "Driver's License")}
-              {renderFileSection("ssn", <Shield className="h-6 w-6 text-gray-400" />, "SSN")}
-              {renderFileSection("resume", <FileText className="h-6 w-6 text-gray-400" />, "Resume")}
-            </div> */}
           </CardContent>
         </Card>
 

@@ -8,6 +8,7 @@ import Peer, { MediaConnection } from "peerjs";
 import Cookies from "js-cookie";
 import { format } from "date-fns";
 import { getProfileById } from "@/hooks/profile";
+import Link from "next/link";
 
 interface Contact {
   email: string;
@@ -21,7 +22,7 @@ interface Contact {
   timestamp?: string;
   unread?: number;
   avatar?: string;
-  online?: boolean;
+  isOnline?: boolean;
   isGroup?: boolean;
 }
 
@@ -105,6 +106,7 @@ export default function ChatDashboard() {
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
 
+  // fetch contacts
   useEffect(() => {
     const fetchContacts = async () => {
       try {
@@ -114,7 +116,15 @@ export default function ChatDashboard() {
         console.error(error);
       }
     };
+
+    // Call immediately on mount
     fetchContacts();
+
+    // Poll every 10 seconds
+    const interval = setInterval(fetchContacts, 10000);
+
+    // Cleanup on unmount
+    return () => clearInterval(interval);
   }, []);
 
   // PeerJs Initialization
@@ -227,6 +237,9 @@ export default function ChatDashboard() {
     if (callState === "audio-calling" || callState === "video-calling" || callState === "ringing") {
       timeout = setTimeout(() => {
         setCallState("no-answer");
+        if (isCaller) {
+          sendMissedCall();
+        }
         endCall();
       }, 60000); // 1 mins
     }
@@ -285,6 +298,27 @@ export default function ChatDashboard() {
       if (ringToneRef.current) ringToneRef.current.currentTime = 0;
     }
   }, [callState, callerId, loggedInUser]);
+
+  useEffect(() => {
+    if (!conversationId) return;
+    const fetchUpdatedConversation = async () => {
+      try {
+        const messageHistory = await contactMessageHistory(conversationId);
+        setMessages(messageHistory);
+      } catch (error: any) {
+        console.error(error);
+      }
+    };
+
+    // Call immediately on mount
+    fetchUpdatedConversation();
+
+    // Poll every 5 seconds
+    const interval = setInterval(fetchUpdatedConversation, 5000);
+
+    // Cleanup on unmount
+    return () => clearInterval(interval);
+  }, [conversationId]);
 
   const handleSelectContact = async (contact: Contact) => {
     // Set the active/open chat
@@ -634,8 +668,28 @@ export default function ChatDashboard() {
     };
 
     try {
-      const response = await sendMessage(conversationId, text);
       setMessages((prev: any) => [...prev, newMessage]);
+      const response = await sendMessage(conversationId, text, "text", "");
+      setMessageInput("");
+    } catch (error: any) {
+      console.log(error);
+    }
+    setSending(false);
+  };
+
+  const sendMissedCall = async () => {
+    if (!selectedContact) return;
+
+    const newMessage = {
+      id: messages.length + 1,
+      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      text: `Missed call`,
+      type: "missedCall",
+    };
+
+    try {
+      setMessages((prev: any) => [...prev, newMessage]);
+      const response = await sendMessage(conversationId, newMessage?.text, newMessage?.type, "");
       setMessageInput("");
     } catch (error: any) {
       console.log(error);
@@ -644,40 +698,77 @@ export default function ChatDashboard() {
   };
 
   // File handling
-  const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      const fileMessage = {
-        id: messages.length + 1,
-        text: `📎 ${file.name}`,
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        sent: true,
-        delivered: true,
-        read: false,
-        type: "file",
-        fileUrl: URL.createObjectURL(file),
-        fileName: file.name,
-        fileSize: file.size,
-      };
-      setMessages((prev: any) => [...prev, fileMessage]);
+    if (!file) return;
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("conversationId", conversationId); // pass your convo id here
+      formData.append("type", "document"); // save in document folder
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        const fileMessage = {
+          id: messages.length + 1,
+          text: `📎 ${file.name}`,
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          sent: true,
+          delivered: true,
+          read: false,
+          type: "file",
+          fileUrl: data.fileUrl, // saved public link
+          fileName: file.name,
+          fileSize: file.size,
+        };
+        setMessages((prev: any) => [...prev, fileMessage]);
+        const response = await sendMessage(conversationId, file.name, fileMessage?.type, data.fileUrl);
+      }
+    } catch (error) {
+      console.error("Upload failed:", error);
     }
+
     setShowAttachmentOptions(false);
   };
 
-  const handleCameraCapture = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleCameraCapture = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      const imageMessage = {
-        id: messages.length + 1,
-        text: "📷 Photo",
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        sent: true,
-        delivered: true,
-        read: false,
-        type: "image",
-        imageUrl: URL.createObjectURL(file),
-      };
-      setMessages((prev: any) => [...prev, imageMessage]);
+    if (!file) return;
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("conversationId", conversationId); // pass convo id
+      formData.append("type", "image"); // save in images folder
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        const imageMessage = {
+          id: messages.length + 1,
+          text: "📷 Photo",
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          sent: true,
+          delivered: true,
+          read: false,
+          type: "image",
+          imageUrl: data.fileUrl, // stored public link
+        };
+        setMessages((prev: any) => [...prev, imageMessage]);
+        const response = await sendMessage(conversationId, imageMessage?.text, imageMessage?.type, data.fileUrl);
+      }
+    } catch (err) {
+      console.error("Upload failed:", err);
     }
   };
 
@@ -726,21 +817,53 @@ export default function ChatDashboard() {
     getUsersList();
   }, [isModalOpen]);
 
-  const sendVoiceNote = () => {
-    if (recordedAudioURL) {
-      const voiceMessage = {
-        id: messages.length + 1,
-        text: "🎤 Voice message",
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        sent: true,
-        delivered: true,
-        read: false,
-        type: "voice",
-        audioUrl: recordedAudioURL,
-      };
-      setMessages((prev: any) => [...prev, voiceMessage]);
-      setRecordedAudioURL(null);
+  const sendVoiceNote = async () => {
+    if (!recordedAudioURL) return;
+
+    try {
+      // Convert blob URL back into a Blob
+      const response = await fetch(recordedAudioURL);
+      const blob = await response.blob();
+
+      // Create a File object for consistency
+      const file = new File([blob], `voice-${Date.now()}.webm`, { type: "audio/webm" });
+
+      // Prepare upload
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("conversationId", conversationId);
+      formData.append("type", "voice"); // save in a "voice" folder
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await res.json();
+
+      if (data.success) {
+        const voiceMessage = {
+          id: messages.length + 1,
+          text: "🎤 Voice message",
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          sent: true,
+          delivered: true,
+          read: false,
+          type: "voice",
+          audioUrl: data.fileUrl, // stored public link
+          fileName: file.name,
+          fileSize: file.size,
+        };
+
+        setMessages((prev: any) => [...prev, voiceMessage]);
+        // optional: save to DB/chat service
+        await sendMessage(conversationId, voiceMessage.text, voiceMessage.type, data.fileUrl);
+      }
+    } catch (err) {
+      console.error("Voice note upload failed:", err);
     }
+
+    setRecordedAudioURL(null);
   };
 
   // Render call overlay
@@ -847,27 +970,6 @@ export default function ChatDashboard() {
               <SquarePen className="w-4 h-4" />
             </button>
           </div>
-          {/* <div className="relative">
-            <button className="p-2" onClick={() => setShowFilterDropdown(!showFilterDropdown)}>
-              <ListFilter className="w-4 h-4" />
-            </button>
-            {showFilterDropdown && (
-              <div className="absolute right-0 mt-2 w-40 bg-white shadow-lg rounded-lg border z-20">
-                <button className="flex items-center gap-2 w-full px-4 py-2 text-left hover:bg-gray-100 rounded-t-lg">
-                  <MessageSquareDot className="w-4 h-4" />
-                  <span>Unread</span>
-                </button>
-                <button className="flex items-center gap-2 w-full px-4 py-2 text-left hover:bg-gray-100">
-                  <Users className="w-4 h-4" />
-                  <span>Groups</span>
-                </button>
-                <button className="flex items-center gap-2 w-full px-4 py-2 text-left hover:bg-gray-100 rounded-b-lg">
-                  <Pen className="w-4 h-4" />
-                  <span>Drafts</span>
-                </button>
-              </div>
-            )}
-          </div> */}
         </div>
 
         {/* Contacts List */}
@@ -883,7 +985,7 @@ export default function ChatDashboard() {
               <div className="flex items-center space-x-3">
                 <div className="relative">
                   <img src={contact?.avatar || "/placeholder.svg"} alt={contact?.firstname} className="w-12 h-12 rounded-full object-cover bg-gray-200" />
-                  {contact?.online ? <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div> : <div className="absolute bottom-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>}
+                  {contact?.isOnline ? <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div> : <div className="absolute bottom-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-start">
@@ -923,7 +1025,7 @@ export default function ChatDashboard() {
                   <h3 className="text-lg font-medium text-gray-900">
                     {selectedContact?.firstname} {selectedContact?.lastname}
                   </h3>
-                  <p className="text-sm text-gray-500">{selectedContact?.online ? "Online" : "Last seen recently"}</p>
+                  <p className="text-sm text-gray-500">{selectedContact?.isOnline ? "Online" : "Last seen recently"}</p>
                 </div>
               </div>
               <div className="flex items-center space-x-2">
@@ -967,10 +1069,10 @@ export default function ChatDashboard() {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-4">
+          <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4">
             {filteredMessages?.map((message: any) => (
               <div key={message?.id} className={`flex ${message?.sent || message?.sender?._id === loggedInUser?.id ? "justify-end" : "justify-start"}`}>
-                {message?.isMissedCall ? (
+                {message?.type === "missedCall" ? (
                   <div className="flex items-center justify-center w-full">
                     <div className="bg-white text-red-500 shadow-sm p-3 rounded-xl flex items-center space-x-3 mx-auto">
                       <PhoneMissed className="w-4 h-4" />
@@ -981,18 +1083,19 @@ export default function ChatDashboard() {
                   </div>
                 ) : (
                   <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${message?.sent || message?.sender?._id === loggedInUser?.id ? "bg-secondary text-white" : "bg-white text-gray-900 shadow-sm"}`}>
-                    {message?.type === "image" && message?.imageUrl && <img src={message?.imageUrl} alt="Shared image" className="w-full h-48 object-cover rounded mb-2" />}
+                    {message?.type === "image" && message?.url && <img src={message?.url} alt="Shared image" className="w-full h-48 object-cover rounded mb-2" />}
                     {message?.type === "voice" && message?.audioUrl && (
                       <div className="flex items-center space-x-2">
                         <audio controls src={message?.audioUrl} className="w-full h-8" />
                       </div>
                     )}
                     {message?.type === "file" && (
-                      <div className="flex items-center space-x-2">
+                      <Link href={message?.url || "/messages"} target="_blank" className="flex items-center space-x-2">
                         <FileText className="w-5 h-5" />
-                        <span className="text-sm">{message?.fileName || "File"}</span>
-                      </div>
+                        <span className="text-sm">{message?.text || "File"}</span>
+                      </Link>
                     )}
+                    {message.type === "text" || (message.type === "file" && <p className="text-sm">{message?.text}</p>)}
                     <p className="text-sm">{message?.text}</p>
                     <div className={`flex items-center justify-end mt-1 space-x-1 ${message?.sent || message?.sender?._id === loggedInUser?.id ? "text-blue-100" : "text-gray-500"}`}>
                       <span className="text-xs">{message?.timestamp}</span>

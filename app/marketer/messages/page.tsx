@@ -131,7 +131,8 @@ export default function ChatDashboard() {
   useEffect(() => {
     if (!loggedInUser) return; // wait until we have the user
 
-    const newPeer = new Peer(loggedInUser.id);
+    const dateSuffix = new Date().toISOString().replace(/[:.]/g, "-");
+    const newPeer = new Peer(`${loggedInUser.id}-${dateSuffix}`);
 
     newPeer.on("open", async (id) => {
       try {
@@ -148,7 +149,7 @@ export default function ChatDashboard() {
 
       // Store the call reference so we can accept/decline later
       incomingCallRef.current = call;
-      setCallerId(metadataCallerId || call.peer);
+      setCallerId(metadataCallerId || call.peer.split("-")[0]);
       setCallState("ringing");
 
       // 👉 handle if caller hangs up before I accept
@@ -1092,11 +1093,12 @@ export default function ChatDashboard() {
                     {message?.type === "file" && (
                       <Link href={message?.url || "/messages"} target="_blank" className="flex items-center space-x-2">
                         <FileText className="w-5 h-5" />
-                        <span className="text-sm">{message?.text || "File"}</span>
+                        <span className="text-sm text-wrap">{message?.text || "File"}</span>
                       </Link>
                     )}
-                    {message.type === "text" || (message.type === "file" && <p className="text-sm">{message?.text}</p>)}
-                    <p className="text-sm">{message?.text}</p>
+                    {message.type === "text" && <p className="text-sm text-wrap wrap-anywhere">{message?.text}</p>}
+                    {message.type === "file" && <p className="text-sm text-truncate">{message?.text}</p>}
+                    <p className="text-sm text-wrap wrap-anywhere">{message?.text}</p>
                     <div className={`flex items-center justify-end mt-1 space-x-1 ${message?.sent || message?.sender?._id === loggedInUser?.id ? "text-blue-100" : "text-gray-500"}`}>
                       <span className="text-xs">{message?.timestamp}</span>
                       {message?.sent || (message?.sender?._id === loggedInUser?.id && <div className="flex">{message?.read ? <CheckCheck className="w-3 h-3 text-blue-300" /> : message?.delivered ? <CheckCheck className="w-3 h-3" /> : <Check className="w-3 h-3" />}</div>)}

@@ -896,6 +896,9 @@ export default function ChatDashboard() {
                     <p className="text-sm text-gray-500 truncate">{contact?.lastMessage}</p>
                     {contact?.unread > 0 && <span className="ml-2 bg-secondary text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center whitespace-nowrap">{contact?.unread > 99 ? "99+" : contact?.unread}</span>}
                   </div>
+                  <div className="flex justify-between items-center mt-1">
+                    <p className={`text-xs text-black truncate capitalize ${contact?.role === "doctor" ? "bg-blue-300" : contact?.role === "marketer" ? "bg-green-300" : ""} rounded p-1`}>{contact?.role}</p>
+                  </div>
                 </div>
               </div>
             </div>

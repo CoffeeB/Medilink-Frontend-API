@@ -18,11 +18,24 @@ export function middleware(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Check auth token from cookies
+  // Check token from cookies
   const token = req.cookies.get("token")?.value;
+  const userCookie = req.cookies.get("user")?.value;
 
-  if (!token) {
-    // Force redirect unauthenticated users
+  if (!token || !userCookie) {
+    return NextResponse.redirect(new URL("/", req.url));
+  }
+
+  let user: any;
+  try {
+    user = JSON.parse(userCookie);
+  } catch (e) {
+    console.error("Invalid user cookie", e);
+    return NextResponse.redirect(new URL("/", req.url));
+  }
+
+  // Only allow doctors or marketers
+  if (user?.role !== "doctor" && user?.role !== "marketer") {
     return NextResponse.redirect(new URL("/", req.url));
   }
 

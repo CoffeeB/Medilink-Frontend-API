@@ -39,6 +39,23 @@ export function middleware(req: NextRequest) {
     return NextResponse.redirect(new URL("/", req.url));
   }
 
+  // Restrict doctors from accessing marketer pages
+  if (user.role === "doctor" && pathname.startsWith("/marketer")) {
+    return NextResponse.redirect(new URL("/doctor/client", req.url));
+  }
+
+  // Restrict marketers from accessing doctor pages
+  if (user.role === "marketer" && pathname.startsWith("/doctor")) {
+    return NextResponse.redirect(new URL("/marketer/client", req.url));
+  }
+
+  // If doctor but not yet accepted → force pending-approval page
+  if (user.role === "doctor" && user.status !== "accepted") {
+    if (pathname !== "/pending-approval") {
+      return NextResponse.redirect(new URL("/pending-approval", req.url));
+    }
+  }
+
   return NextResponse.next();
 }
 

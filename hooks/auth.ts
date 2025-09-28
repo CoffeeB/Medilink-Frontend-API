@@ -47,7 +47,7 @@ export const login = async (data: LoginFormValues): Promise<LoginResponse> => {
 
   const user = userResponse.data;
 
-  Cookies.set("user", JSON.stringify({ id: user._id, email: user.email, role: user.role }), {
+  Cookies.set("user", JSON.stringify({ id: user._id, email: user.email, role: user.role, status: user.status }), {
     secure: true,
     sameSite: "strict",
     expires: 7,

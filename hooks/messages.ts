@@ -113,8 +113,8 @@ export const sendMessage = async (conversationId: string, text: string, type: st
     {
       conversationId,
       text,
-      url,
       type,
+      url,
     },
     {
       headers: {

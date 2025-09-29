@@ -36,7 +36,8 @@ type CallState =
   | "ended" // after hangup
   | "unavailable" // peer not reachable
   | "disconnected" // timed out after 2min
-  | "no-answer"; // timed out after 2min
+  | "no-answer"
+  | "connecting"; // timed out after 2min
 
 // Simple emoji data
 const emojis = ["😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", "😊", "😇", "🙂", "🙃", "😉", "😌", "😍", "🥰", "😘", "😗", "😙", "😚", "😋", "😛", "😝", "😜", "🤪", "🤨", "🧐", "🤓", "😎", "🤩", "🥳", "😏", "😒", "😞", "😔", "😟", "😕", "🙁", "☹️", "😣", "😖", "😫", "😩", "🥺", "😢", "😭", "😤", "😠", "😡", "🤬", "🤯", "😳", "🥵", "🥶", "😱", "😨", "😰", "😥", "😓", "🤗", "🤔", "🤭", "🤫", "🤥", "😶", "😐", "😑", "😬", "🙄", "😯", "😦", "😧", "😮", "😲", "🥱", "😴", "🤤", "😪", "😵", "🤐", "🥴", "🤢", "🤮", "🤧", "😷", "🤒", "🤕", "🤑", "🤠"];
@@ -84,7 +85,8 @@ export default function ChatDashboard() {
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
   const remoteVideoRef = useRef<HTMLVideoElement>(null);
-  const callTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const callTimerRef = useRef<number | null>(null);
+  const callStartRef = useRef<number | null>(null);
   const localStreamRef = useRef<MediaStream | null>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const incomingCallRef = useRef<any>(null);
@@ -234,6 +236,45 @@ export default function ChatDashboard() {
     return () => document.removeEventListener("click", unlock);
   }, [callerId, callState]);
 
+  // connection check
+  useEffect(() => {
+    if (callState !== "audio-connected" && callState !== "video-connected") return;
+
+    const timeout = setTimeout(() => {
+      // Local tracks
+      const localTracks = localStreamRef.current?.getTracks() || [];
+      const localHasMedia = localTracks.some((t) => t.readyState === "live" && (t.kind === "audio" || t.kind === "video"));
+
+      // Remote tracks from remote video element
+      let remoteHasMedia = false;
+      if (remoteVideoRef.current && remoteVideoRef.current.srcObject instanceof MediaStream) {
+        const remoteTracks = (remoteVideoRef.current.srcObject as MediaStream).getTracks();
+        remoteHasMedia = remoteTracks.some((t) => t.readyState === "live" && (t.kind === "audio" || t.kind === "video"));
+      }
+
+      if (!localHasMedia || !remoteHasMedia) {
+        console.warn("⚠️ Media missing, setting call to 'connecting'...");
+        setCallState("connecting");
+
+        // End call after another 10s if media still missing
+        setTimeout(() => {
+          const stillNoLocal = !(localStreamRef.current?.getTracks() || []).some((t) => t.readyState === "live");
+          const stillNoRemote = !(remoteVideoRef.current?.srcObject instanceof MediaStream && (remoteVideoRef.current?.srcObject as MediaStream).getTracks().some((t) => t.readyState === "live"));
+
+          if (stillNoLocal || stillNoRemote) {
+            console.warn("❌ Ending call: missing microphone/camera after grace period.");
+            setCallState("ended");
+            endCall(true);
+          }
+        }, 10000);
+      } else {
+        console.log("✅ Both peers have active media tracks.");
+      }
+    }, 10000);
+
+    return () => clearTimeout(timeout);
+  }, [callState]);
+
   // call state handler
   useEffect(() => {
     let timeout: NodeJS.Timeout;
@@ -356,9 +397,9 @@ export default function ChatDashboard() {
   };
 
   // Auto-scroll to bottom of messages
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, []);
+  // useEffect(() => {
+  //   messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  // }, []);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -412,17 +453,35 @@ export default function ChatDashboard() {
   };
 
   const startCallTimer = () => {
-    callTimerRef.current = setInterval(() => {
-      setCallDuration((prev) => prev + 1);
-    }, 1000);
+    // prevent double intervals
+    if (callTimerRef.current !== null) return;
+
+    // Establish start time so elapsed = now - startTime
+    // If callDuration > 0, that means we are resuming: set start = now - elapsed
+    callStartRef.current = Date.now() - callDuration * 1000;
+
+    // update frequently enough for UI but not too frequently (250ms is fine)
+    callTimerRef.current = window.setInterval(() => {
+      if (!callStartRef.current) return;
+      const elapsedSeconds = Math.floor((Date.now() - callStartRef.current) / 1000);
+      setCallDuration(elapsedSeconds);
+    }, 250);
   };
 
-  const stopCallTimer = () => {
-    if (callTimerRef.current) {
+  const stopCallTimer = (reset = true) => {
+    if (callTimerRef.current !== null) {
       clearInterval(callTimerRef.current);
       callTimerRef.current = null;
     }
-    setCallDuration(0);
+
+    // If we are pausing (reset === false), keep callStartRef so resume works:
+    if (reset) {
+      callStartRef.current = null;
+      setCallDuration(0);
+    } else {
+      // pause: keep callDuration, clear start timestamp
+      callStartRef.current = null;
+    }
   };
 
   const handleSignal = (msg: any) => {
@@ -440,6 +499,7 @@ export default function ChatDashboard() {
   };
 
   const startAudioCall = async (remoteId: string) => {
+    sendCall("audio");
     setIsCaller(true);
     // 🔊 Play dial tone immediately on button click
     if (dialToneRef.current) {
@@ -500,6 +560,7 @@ export default function ChatDashboard() {
   };
 
   const startVideoCall = async (remoteId: string) => {
+    sendCall("video");
     setIsCaller(true);
     // 🔊 Play dial tone immediately on button click
     if (dialToneRef.current) {
@@ -625,6 +686,9 @@ export default function ChatDashboard() {
     }
 
     stopDialtone();
+    if (isCaller) {
+      sendMissedCall();
+    }
     endCall(true);
   };
 
@@ -722,6 +786,26 @@ export default function ChatDashboard() {
       timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
       text: `Missed call`,
       type: "missedCall",
+    };
+
+    try {
+      setMessages((prev: any) => [...prev, newMessage]);
+      const response = await sendMessage(conversationId, newMessage?.text, newMessage?.type, "");
+      setMessageInput("");
+    } catch (error: any) {
+      console.log(error);
+    }
+    setSending(false);
+  };
+
+  const sendCall = async (type: string) => {
+    if (!selectedContact) return;
+
+    const newMessage = {
+      id: messages.length + 1,
+      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      text: `${type} call`,
+      type: `${type}Call`,
     };
 
     try {
@@ -911,7 +995,7 @@ export default function ChatDashboard() {
     return (
       <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex flex-col items-center justify-center text-white">
         <div className="text-center mb-8">
-          <img src={isCaller ? selectedContact?.avatar : caller?.avatar || "/images/Blank_Profile.jpg"} alt={isCaller ? selectedContact?.firstname : caller?.firstname} className="w-32 h-32 rounded-full mx-auto mb-4" />
+          <img src={isCaller ? selectedContact?.avatar || "/images/Blank_Profile.jpg" : caller?.avatar || "/images/Blank_Profile.jpg"} alt={isCaller ? selectedContact?.firstname : caller?.firstname} className="w-32 h-32 rounded-full mx-auto mb-4" />
           {/* <h2 className="text-2xl font-semibold mb-2">
             {selectedContact?.firstname} {selectedContact?.lastname}
           </h2> */}
@@ -920,6 +1004,7 @@ export default function ChatDashboard() {
           </h3>
           {callState === "audio-calling" || (callState === "video-calling" && <h3>Calling</h3>)}
           {callState === "audio-connected" || (callState === "video-connected" && <h3>In call</h3>)}
+          {callState === "connecting" && <h3>Connecting</h3>}
           {callState === "ended" && <h3>Call disconnected</h3>}
           <p className="text-lg text-white">
             {callState === "ringing" && "Incoming call…"}
@@ -1120,10 +1205,14 @@ export default function ChatDashboard() {
                   </div>
                 ) : (
                   <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${message?.sent || message?.sender?._id === loggedInUser?.id ? "bg-secondary text-white" : "bg-white text-gray-900 shadow-sm"}`}>
-                    {message?.type === "image" && message?.url && <img src={message?.url} alt="Shared image" className="w-full h-48 object-cover rounded mb-2" />}
-                    {message?.type === "voice" && message?.audioUrl && (
+                    {message?.type === "image" && message?.url && (
+                      <Link href={message?.url || "/messages"} target="_blank" className="flex items-center space-x-2">
+                        <img src={message?.url} alt="Shared image" className="w-full h-48 object-cover rounded mb-2" />
+                      </Link>
+                    )}
+                    {message?.type === "voice" && message?.url && (
                       <div className="flex items-center space-x-2">
-                        <audio controls src={message?.audioUrl} className="w-full h-8" />
+                        <audio controls src={message?.url} className="w-[100] h-10" />
                       </div>
                     )}
                     {message?.type === "file" && (
@@ -1132,9 +1221,30 @@ export default function ChatDashboard() {
                         <span className="text-sm text-wrap">{message?.text || "File"}</span>
                       </Link>
                     )}
+                    {/* Audio call message */}
+                    {message?.type === "audioCall" && (
+                      <div
+                        onClick={() => {
+                          if (recipientPeerId) startAudioCall(recipientPeerId);
+                        }}
+                        className="flex items-center space-x-2 cursor-pointer hover:bg-black/10 p-2 rounded transition">
+                        <Phone className="w-5 h-5 text-green-500" />
+                        <span className="text-sm">{message?.text}</span>
+                      </div>
+                    )}
+
+                    {/* Video call message */}
+                    {message?.type === "videoCall" && (
+                      <div
+                        onClick={() => {
+                          if (recipientPeerId) startVideoCall(recipientPeerId);
+                        }}
+                        className="flex items-center space-x-2 cursor-pointer hover:bg-black/10 p-2 rounded transition">
+                        <Video className="w-5 h-5 text-blue-500" />
+                        <span className="text-sm">{message?.text}</span>
+                      </div>
+                    )}
                     {message.type === "text" && <p className="text-sm text-wrap wrap-anywhere">{message?.text}</p>}
-                    {message.type === "file" && <p className="text-sm text-truncate">{message?.text}</p>}
-                    <p className="text-sm text-wrap wrap-anywhere">{message?.text}</p>
                     <div className={`flex items-center justify-end mt-1 space-x-1 ${message?.sent || message?.sender?._id === loggedInUser?.id ? "text-blue-100" : "text-gray-500"}`}>
                       <span className="text-xs">{message?.timestamp}</span>
                       {message?.sent || (message?.sender?._id === loggedInUser?.id && <div className="flex">{message?.read ? <CheckCheck className="w-3 h-3 text-blue-300" /> : message?.delivered ? <CheckCheck className="w-3 h-3" /> : <Check className="w-3 h-3" />}</div>)}

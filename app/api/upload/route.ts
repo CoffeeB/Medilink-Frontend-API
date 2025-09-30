@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { promises as fs } from "fs";
-import path from "path";
+import { supabase } from "@/lib/supabase";
 
 export async function POST(req: Request) {
   try {
@@ -13,34 +12,37 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "Missing file, type, or conversationId" }, { status: 400 });
     }
 
-    // Choose folder by type
+    // Pick folder by type
     const folder = `${type}s`;
 
-    // Current date (yyyy-mm-dd)
+    // Build unique path: /conversations/{id}/{date}/{folder}/{filename}
     const now = new Date();
-    const today = now
-      .toISOString() // "2025-09-25T07:43:12.345Z"
-      .replace("T", "-") // "2025-09-25-07:43:12.345Z"
-      .replace(/\..+/, "") // "2025-09-25-07:43:12"
-      .replace(/:/g, "-"); // "2025-09-25-07-43-12"
+    const today = now.toISOString().replace(/[:.]/g, "-");
+    const filePath = `conversations/${conversationId}/${today}/${folder}/${file.name}`;
 
-    // Full directory path inside /public
-    const uploadDir = path.join(process.cwd(), "public", "uploads", "conversations", conversationId, today, folder);
+    // Upload to Supabase storage (uploads bucket)
+    const { error: uploadError } = await supabase.storage.from("uploads").upload(filePath, file, {
+      cacheControl: "3600",
+      upsert: false,
+    });
 
-    // Ensure directory exists
-    await fs.mkdir(uploadDir, { recursive: true });
+    if (uploadError) {
+      console.error("Supabase upload error:", uploadError);
+      return NextResponse.json({ error: "Upload failed" }, { status: 500 });
+    }
 
-    // Full file path
-    const filePath = path.join(uploadDir, file.name);
+    // Create signed URL valid for 24 hours (adjust as needed)
+    const { data: signedData, error: signedError } = await supabase.storage.from("uploads").createSignedUrl(filePath, 60 * 60 * 24); // 24 hours
 
-    // Save file
-    const buffer = Buffer.from(await file.arrayBuffer());
-    await fs.writeFile(filePath, buffer);
+    if (signedError) {
+      console.error("Supabase signed URL error:", signedError);
+      return NextResponse.json({ error: "Signed URL failed" }, { status: 500 });
+    }
 
-    // Public URL (served from /public)
-    const fileUrl = `/uploads/conversations/${conversationId}/${today}/${folder}/${encodeURIComponent(file.name)}`;
-
-    return NextResponse.json({ success: true, fileUrl });
+    return NextResponse.json({
+      success: true,
+      fileUrl: signedData.signedUrl,
+    });
   } catch (err) {
     console.error("Upload error:", err);
     return NextResponse.json({ error: "File upload failed" }, { status: 500 });

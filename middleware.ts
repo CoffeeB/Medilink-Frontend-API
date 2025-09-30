@@ -50,7 +50,7 @@ export function middleware(req: NextRequest) {
   }
 
   // If doctor but not yet accepted → force pending-approval page
-  if (user.role === "doctor" && user.status !== "accepted") {
+  if (user.role === "doctor" && user.status !== "approved") {
     if (pathname !== "/pending-approval") {
       return NextResponse.redirect(new URL("/pending-approval", req.url));
     }

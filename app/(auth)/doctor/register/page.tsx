@@ -104,7 +104,7 @@ export default function RegisterADoctor() {
         <div className="max-w-4xl mx-auto">
           {/* Header */}
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-bold text-gray-900 mb-2">Register A Doctor</h1>
+            <h1 className="text-3xl font-bold text-gray-900 mb-2">Register As A Doctor</h1>
           </div>
 
           {/* Registration Form */}

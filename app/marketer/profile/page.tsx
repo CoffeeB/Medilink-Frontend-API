@@ -153,7 +153,7 @@ export default function MarketerProfile() {
         {/* Doctor Info Card */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-base sm:text-lg font-medium">Doctor Information</CardTitle>
+            <CardTitle className="text-base sm:text-lg font-medium">Marketer Information</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3 sm:space-y-4">
             <div className="flex sm:flex-row sm:items-start space-y-3 sm:space-y-0 sm:space-x-4">

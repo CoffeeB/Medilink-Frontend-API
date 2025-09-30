@@ -197,6 +197,7 @@ export default function ChatDashboard() {
 
     newPeer.on("error", (err) => {
       console.error("Peer error:", err);
+      sendMissedCall();
       setCallState("unavailable");
     });
 

@@ -125,6 +125,9 @@ export default function DoctorLogin() {
                   <Link href="/forgot-password" className="text-xs text-primary">
                     Forgot password?
                   </Link>
+                  <Link href="/doctor/register" className="text-xs text-primary">
+                    Register
+                  </Link>
                 </div>
               </form>
             </Form>

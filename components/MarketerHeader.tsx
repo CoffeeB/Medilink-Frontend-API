@@ -10,6 +10,7 @@ import { Menu, X } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import AvatarUpload from "./AvatarUpload";
 import { useRouter } from "next/navigation";
+import { logout } from "@/hooks/auth";
 
 const MarketerHeader = () => {
   // const pathname = usePathname()
@@ -23,6 +24,7 @@ const MarketerHeader = () => {
   const handleLogout = async () => {
     try {
       localStorage.removeItem("token");
+      logout();
       // Redirect to login pag
       router.push("/marketer/login");
     } catch (error) {
@@ -49,9 +51,9 @@ const MarketerHeader = () => {
             <Link className={`hover:text-primary ${isActive("/marketer/messaging") ? "text-primary" : ""}`} href="/marketer/messages">
               Messaging
             </Link>
-            <Link className={`hover:text-primary ${isActive("/marketer/register-a-doc") ? "text-primary" : ""}`} href="/marketer/register-a-doc">
+            {/* <Link className={`hover:text-primary ${isActive("/marketer/register-a-doc") ? "text-primary" : ""}`} href="/marketer/register-a-doc">
               Register a Doctor
-            </Link>
+            </Link> */}
           </nav>
 
           {/* Right Side - Profile */}

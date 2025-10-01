@@ -25,6 +25,7 @@ export async function updateProfile(data: any) {
       Authorization: `Bearer ${token}`,
     },
   });
+
   return res.data;
 }
 

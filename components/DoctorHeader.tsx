@@ -49,28 +49,28 @@ const DoctorHeader = () => {
   };
 
   // const isActive = (path: string) => pathname === path
-  useEffect(() => {
-    const fetchNotifications = async () => {
-      const doctor = false;
-      const marketer = true;
+  // useEffect(() => {
+  //   const fetchNotifications = async () => {
+  //     const doctor = false;
+  //     const marketer = true;
 
-      try {
-        const response = await seeAllNotifications();
-        setNotifications(response);
-      } catch (error: any) {
-        console.error(error);
-      }
-    };
+  //     try {
+  //       const response = await seeAllNotifications();
+  //       setNotifications(response);
+  //     } catch (error: any) {
+  //       console.error(error);
+  //     }
+  //   };
 
-    // Call once immediately
-    fetchNotifications();
+  //   // Call once immediately
+  //   fetchNotifications();
 
-    // Then set up polling
-    const interval = setInterval(fetchNotifications, 10000); // every 60s
+  //   // Then set up polling
+  //   const interval = setInterval(fetchNotifications, 10000); // every 60s
 
-    // Cleanup when component unmounts
-    return () => clearInterval(interval);
-  }, []);
+  //   // Cleanup when component unmounts
+  //   return () => clearInterval(interval);
+  // }, []);
 
   const handleLogout = async () => {
     try {
@@ -107,7 +107,7 @@ const DoctorHeader = () => {
 
           {/* Right Side - Profile */}
           <div className="flex items-center space-x-2">
-            <DropdownMenu>
+            {/* <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button className="text-primary cursor-pointer hover:text-primary" variant="ghost">
                   <Bell className="cursor-pointer" size={20} />
@@ -125,7 +125,7 @@ const DoctorHeader = () => {
                   <DropdownMenuItem disabled>No notifications</DropdownMenuItem>
                 )}
               </DropdownMenuContent>
-            </DropdownMenu>
+            </DropdownMenu> */}
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>

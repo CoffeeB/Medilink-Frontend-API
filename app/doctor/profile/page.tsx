@@ -54,61 +54,60 @@ export default function DoctorProfile() {
     setUploadedFiles((prev) => ({ ...prev, [field]: undefined }));
   };
 
-  const renderFileSection = (field: keyof typeof uploadedFiles, icon: React.ReactNode, title: string) => (
-    <div
-      className={`border-2 border-dashed rounded-lg p-6 transition-colors bg-gray-100 ${isDragging === field ? "border-blue-500 bg-blue-50" : "border-gray-300 bg-gray-50"}`}
-      onDragOver={(e) => {
-        e.preventDefault();
-        setIsDragging(field);
-      }}
-      onDragLeave={() => setIsDragging(null)}
-      onDrop={(e) => {
-        e.preventDefault();
-        setIsDragging(null);
-        const file = e.dataTransfer.files?.[0];
-        if (file) handleFileUpload(field, file);
-      }}>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          {icon}
-          <div>
-            <p className="text-sm font-medium text-gray-700">{title}</p>
-            <p className="text-xs text-gray-500">Drag & drop your file or click to upload</p>
-          </div>
-        </div>
-        <Button type="button" variant="secondary" size="sm" onClick={() => document.getElementById(field)?.click()}>
-          <Upload className="h-4 w-4 mr-2" />
-          {uploadedFiles[field] ? "Change" : "Upload"}
-        </Button>
-      </div>
+  //   <div
+  //     className={`border-2 border-dashed rounded-lg p-6 transition-colors bg-gray-100 ${isDragging === field ? "border-blue-500 bg-blue-50" : "border-gray-300 bg-gray-50"}`}
+  //     onDragOver={(e) => {
+  //       e.preventDefault();
+  //       setIsDragging(field);
+  //     }}
+  //     onDragLeave={() => setIsDragging(null)}
+  //     onDrop={(e) => {
+  //       e.preventDefault();
+  //       setIsDragging(null);
+  //       const file = e.dataTransfer.files?.[0];
+  //       if (file) handleFileUpload(field, file);
+  //     }}>
+  //     <div className="flex items-center justify-between">
+  //       <div className="flex items-center space-x-3">
+  //         {icon}
+  //         <div>
+  //           <p className="text-sm font-medium text-gray-700">{title}</p>
+  //           <p className="text-xs text-gray-500">Drag & drop your file or click to upload</p>
+  //         </div>
+  //       </div>
+  //       <Button type="button" variant="secondary" size="sm" onClick={() => document.getElementById(field)?.click()}>
+  //         <Upload className="h-4 w-4 mr-2" />
+  //         {uploadedFiles[field] ? "Change" : "Upload"}
+  //       </Button>
+  //     </div>
 
-      <input
-        id={field}
-        type="file"
-        className="hidden"
-        accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) handleFileUpload(field, file);
-        }}
-      />
+  //     <input
+  //       id={field}
+  //       type="file"
+  //       className="hidden"
+  //       accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
+  //       onChange={(e) => {
+  //         const file = e.target.files?.[0];
+  //         if (file) handleFileUpload(field, file);
+  //       }}
+  //     />
 
-      {/* Preview section */}
-      {uploadedFiles[field] && (
-        <div className="mt-4 flex items-center justify-between bg-white p-3 rounded-lg shadow-sm">
-          <div className="flex items-center space-x-3">
-            <div>
-              <p className="text-sm font-medium text-gray-700">{uploadedFiles[field]?.name}</p>
-              <p className="text-xs text-gray-500">{((uploadedFiles[field]?.size || 0) / 1024).toFixed(1)} KB</p>
-            </div>
-          </div>
-          <Button variant="ghost" size="sm" onClick={() => handleRemoveFile(field)}>
-            Remove
-          </Button>
-        </div>
-      )}
-    </div>
-  );
+  //     {/* Preview section */}
+  //     {uploadedFiles[field] && (
+  //       <div className="mt-4 flex items-center justify-between bg-white p-3 rounded-lg shadow-sm">
+  //         <div className="flex items-center space-x-3">
+  //           <div>
+  //             <p className="text-sm font-medium text-gray-700">{uploadedFiles[field]?.name}</p>
+  //             <p className="text-xs text-gray-500">{((uploadedFiles[field]?.size || 0) / 1024).toFixed(1)} KB</p>
+  //           </div>
+  //         </div>
+  //         <Button variant="ghost" size="sm" onClick={() => handleRemoveFile(field)}>
+  //           Remove
+  //         </Button>
+  //       </div>
+  //     )}
+  //   </div>
+  // );
 
   const handleClientPinChange = (oldPin: string, newPin: string) => {
     console.log("Changing client PIN:", { oldPin, newPin });
@@ -118,7 +117,7 @@ export default function DoctorProfile() {
   const handleSave = async () => {
     try {
       const updated = await updateProfile(editableProfile);
-      setProfile(updated);
+      setProfile(updated?.user);
       setIsEditing(false);
     } catch (err) {
       console.error("Failed to update profile", err);
@@ -165,19 +164,85 @@ export default function DoctorProfile() {
                   }
                 }}
               />
-              <div className="flex flex-wrap text-center sm:text-left">
+              <div className="flex flex-col text-center sm:text-left">
                 {isEditing ? (
                   <>
                     <Input value={editableProfile?.firstname || ""} onChange={(e) => setEditableProfile({ ...editableProfile, firstname: e.target.value })} placeholder="First Name" className="mb-2" />
                     <Input value={editableProfile?.lastname || ""} onChange={(e) => setEditableProfile({ ...editableProfile, lastname: e.target.value })} placeholder="Last Name" />
-                    <Input value={editableProfile?.address || ""} onChange={(e) => setEditableProfile({ ...editableProfile, address: e.target.value })} placeholder="Address" className="mt-2" />
+
+                    {/* Address fields */}
+                    <Input
+                      value={editableProfile?.address?.street || ""}
+                      onChange={(e) =>
+                        setEditableProfile({
+                          ...editableProfile,
+                          address: { ...editableProfile?.address, street: e.target.value },
+                        })
+                      }
+                      placeholder="Street"
+                      className="mt-2"
+                    />
+                    <Input
+                      value={editableProfile?.address?.streetLine2 || ""}
+                      onChange={(e) =>
+                        setEditableProfile({
+                          ...editableProfile,
+                          address: { ...editableProfile?.address, streetLine2: e.target.value },
+                        })
+                      }
+                      placeholder="Street Line 2"
+                    />
+                    <Input
+                      value={editableProfile?.address?.city || ""}
+                      onChange={(e) =>
+                        setEditableProfile({
+                          ...editableProfile,
+                          address: { ...editableProfile?.address, city: e.target.value },
+                        })
+                      }
+                      placeholder="City"
+                    />
+                    <Input
+                      value={editableProfile?.address?.region || ""}
+                      onChange={(e) =>
+                        setEditableProfile({
+                          ...editableProfile,
+                          address: { ...editableProfile?.address, region: e.target.value },
+                        })
+                      }
+                      placeholder="Region"
+                    />
+                    <Input
+                      value={editableProfile?.address?.postalCode || ""}
+                      onChange={(e) =>
+                        setEditableProfile({
+                          ...editableProfile,
+                          address: { ...editableProfile?.address, postalCode: e.target.value },
+                        })
+                      }
+                      placeholder="Postal Code"
+                    />
+                    <Input
+                      value={editableProfile?.address?.country || ""}
+                      onChange={(e) =>
+                        setEditableProfile({
+                          ...editableProfile,
+                          address: { ...editableProfile?.address, country: e.target.value },
+                        })
+                      }
+                      placeholder="Country"
+                    />
                   </>
                 ) : (
                   <>
                     <h3 className="font-semibold text-secondary text-base sm:text-lg">
                       {profile?.firstname} {profile?.lastname}
                     </h3>
-                    <p className="text-xs sm:text-sm text-muted-foreground">{profile?.address}</p>
+                    <p className="text-xs sm:text-sm text-muted-foreground">
+                      {profile?.address?.street}, {profile?.address?.streetLine2} <br />
+                      {profile?.address?.city}, {profile?.address?.region} {profile?.address?.postalCode} <br />
+                      {profile?.address?.country}
+                    </p>
                   </>
                 )}
               </div>
@@ -223,10 +288,64 @@ export default function DoctorProfile() {
             <div>
               {isEditing ? (
                 <>
-                  <Input value={editableProfile?.clinicName || ""} onChange={(e) => setEditableProfile({ ...editableProfile, clinicName: e.target.value })} placeholder="Clinic Name" className="mb-2" />
-                  <Input value={editableProfile?.clinicAddressLine1 || ""} onChange={(e) => setEditableProfile({ ...editableProfile, clinicAddressLine1: e.target.value })} placeholder="Street Address" className="mb-2" />
-                  <Input value={editableProfile?.clinicAddressLine2 || ""} onChange={(e) => setEditableProfile({ ...editableProfile, clinicAddressLine2: e.target.value })} placeholder="City, State, ZIP" className="mb-2" />
-                  <Input value={editableProfile?.phone || ""} onChange={(e) => setEditableProfile({ ...editableProfile, phone: e.target.value })} placeholder="Phone Number" />
+                  <Input
+                    value={editableProfile?.clinic?.name || ""}
+                    onChange={(e) =>
+                      setEditableProfile({
+                        ...editableProfile,
+                        clinic: {
+                          ...editableProfile?.clinic,
+                          name: e.target.value,
+                        },
+                      })
+                    }
+                    placeholder="Clinic Name"
+                    className="mb-2"
+                  />
+
+                  <Input
+                    value={editableProfile?.clinic?.addressLine1 || ""}
+                    onChange={(e) =>
+                      setEditableProfile({
+                        ...editableProfile,
+                        clinic: {
+                          ...editableProfile?.clinic,
+                          addressLine1: e.target.value,
+                        },
+                      })
+                    }
+                    placeholder="Street Address"
+                    className="mb-2"
+                  />
+
+                  <Input
+                    value={editableProfile?.clinic?.addressLine2 || ""}
+                    onChange={(e) =>
+                      setEditableProfile({
+                        ...editableProfile,
+                        clinic: {
+                          ...editableProfile?.clinic,
+                          addressLine2: e.target.value,
+                        },
+                      })
+                    }
+                    placeholder="City, State, ZIP"
+                    className="mb-2"
+                  />
+
+                  <Input
+                    value={editableProfile?.clinic?.phone || ""}
+                    onChange={(e) =>
+                      setEditableProfile({
+                        ...editableProfile,
+                        clinic: {
+                          ...editableProfile?.clinic,
+                          phone: e.target.value,
+                        },
+                      })
+                    }
+                    placeholder="Phone Number"
+                  />
                 </>
               ) : (
                 <>
@@ -235,7 +354,7 @@ export default function DoctorProfile() {
                   <p className="text-xs sm:text-sm text-muted-foreground">Dickinson, TX 77539-1628</p>
                   <div className="flex items-center gap-2 border rounded-lg p-2 mt-2 text-emerald-600">
                     <Phone className="w-4 h-4" />
-                    <span className="text-sm sm:text-base">{profile?.phone}</span>
+                    <span className="text-sm sm:text-base">{profile?.clinic?.phone}</span>
                   </div>
                 </>
               )}

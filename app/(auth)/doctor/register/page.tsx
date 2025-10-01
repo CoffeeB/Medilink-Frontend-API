@@ -13,6 +13,7 @@ import { Upload, FileText, CreditCard, Shield } from "lucide-react";
 import countries from "world-countries";
 import { Eye, EyeOff } from "lucide-react";
 import { registerDoctor } from "@/hooks/registration";
+import { login } from "@/hooks/auth";
 
 const phoneSchema = z
   .string()
@@ -87,9 +88,10 @@ export default function RegisterADoctor() {
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
     try {
-      console.log("Signup initiated");
       const payload = { ...data, role: "doctor" };
       const response = await registerDoctor(payload);
+      const loginData = { email: data.email, password: data.password };
+      await login(loginData);
       router.push("/pending-approval");
     } catch (error: any) {
       console.log("Registration error:", error.message);

@@ -6,7 +6,7 @@ import Link from "next/link";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { login, loginFormSchema } from "@/hooks/auth";
+import { login, loginFormSchema, logout } from "@/hooks/auth";
 import Footer from "@/components/Footer";
 
 import { Button } from "@/components/ui/button";
@@ -38,10 +38,15 @@ export default function MarketerLogin() {
     setError("");
 
     try {
+      console.log("attempting login");
       const { user } = await login(data);
-
       if (user.role === "marketer") {
+        console.log("routing to client page");
         router.push("/marketer/client");
+      } else {
+        setError("Invalid Marketer Credentials");
+        console.log("logging out");
+        logout();
       }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (err: any) {

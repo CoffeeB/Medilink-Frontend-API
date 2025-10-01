@@ -819,6 +819,12 @@ export default function ChatDashboard() {
     setSending(false);
   };
 
+  const getFileType = (file: File): "video" | "image" | "document" => {
+    if (file.type.startsWith("video/")) return "video";
+    if (file.type.startsWith("image/")) return "image";
+    return "document";
+  };
+
   // File handling
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -826,11 +832,12 @@ export default function ChatDashboard() {
 
     try {
       const formData = new FormData();
+      const fileType = getFileType(file);
       formData.append("file", file);
       formData.append("conversationId", conversationId); // pass your convo id here
-      formData.append("type", "document"); // save in document folder
+      formData.append("type", fileType); // save in document folder
 
-      const res = await fetch("/api/upload", {
+      const res = await fetch("/api/upload/conversations", {
         method: "POST",
         body: formData,
       });
@@ -839,12 +846,12 @@ export default function ChatDashboard() {
       if (data.success) {
         const fileMessage = {
           id: messages.length + 1,
-          text: `📎 ${file.name}`,
+          text: fileType === "image" ? "📷 Photo" : fileType === "video" ? "🎥 Video" : `📎 ${file.name}`,
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
           sent: true,
           delivered: true,
           read: false,
-          type: "file",
+          type: fileType,
           fileUrl: data.fileUrl, // saved public link
           fileName: file.name,
           fileSize: file.size,
@@ -865,11 +872,12 @@ export default function ChatDashboard() {
 
     try {
       const formData = new FormData();
+      const fileType = getFileType(file);
       formData.append("file", file);
       formData.append("conversationId", conversationId); // pass convo id
-      formData.append("type", "image"); // save in images folder
+      formData.append("type", fileType); // save in images folder
 
-      const res = await fetch("/api/upload", {
+      const res = await fetch("/api/upload/conversations", {
         method: "POST",
         body: formData,
       });
@@ -878,12 +886,12 @@ export default function ChatDashboard() {
       if (data.success) {
         const imageMessage = {
           id: messages.length + 1,
-          text: "📷 Photo",
+          text: fileType === "image" ? "📷 Photo" : fileType === "video" ? "🎥 Video" : `📎 ${file.name}`,
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
           sent: true,
           delivered: true,
           read: false,
-          type: "image",
+          type: fileType,
           imageUrl: data.fileUrl, // stored public link
         };
         setMessages((prev: any) => [...prev, imageMessage]);
@@ -956,7 +964,7 @@ export default function ChatDashboard() {
       formData.append("conversationId", conversationId);
       formData.append("type", "voice"); // save in a "voice" folder
 
-      const res = await fetch("/api/upload", {
+      const res = await fetch("/api/upload/conversations", {
         method: "POST",
         body: formData,
       });
@@ -986,6 +994,12 @@ export default function ChatDashboard() {
     }
 
     setRecordedAudioURL(null);
+  };
+
+  const isVideo = (url?: string) => {
+    if (!url) return false;
+    const videoExtensions = [".mp4", ".mov", ".avi", ".mkv", ".webm"];
+    return videoExtensions.some((ext) => url.toLowerCase().endsWith(ext));
   };
 
   // Render call overlay
@@ -1220,6 +1234,44 @@ export default function ChatDashboard() {
                       <Link href={message?.url || "/messages"} target="_blank" className="flex items-center space-x-2">
                         <FileText className="w-5 h-5" />
                         <span className="text-sm text-wrap">{message?.text || "File"}</span>
+                      </Link>
+                    )}
+                    {message?.type === "image" && message?.url && (
+                      <Link href={message?.url || "/messages"} target="_blank" className="flex items-center space-x-2">
+                        <img src={message?.url} alt="Shared image" className="w-full h-48 object-cover rounded mb-2" />
+                      </Link>
+                    )}
+
+                    {message?.type === "file" && (
+                      <Link href={message?.url || "/messages"} target="_blank" className="flex items-center space-x-2">
+                        <FileText className="w-5 h-5" />
+                        <span className="text-sm text-wrap">{message?.text || "File"}</span>
+                      </Link>
+                    )}
+
+                    {message?.type === "video" && message?.url && (
+                      <Link href={message?.url || "/messages"} target="_blank" className="relative block w-full h-48">
+                        {/* Thumbnail preview (poster frame or placeholder) */}
+                        <video
+                          src={message?.url}
+                          className="w-full h-48 object-cover rounded mb-2"
+                          muted
+                          playsInline
+                          preload="metadata"
+                          onLoadedMetadata={(e) => {
+                            // Hack: only load metadata, avoid autoplay
+                            (e.target as HTMLVideoElement).currentTime = 1;
+                          }}
+                        />
+
+                        {/* Play icon overlay */}
+                        <div className="absolute inset-0 flex items-center justify-center">
+                          <div className="bg-black bg-opacity-50 rounded-full p-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-white" fill="currentColor" viewBox="0 0 16 16">
+                              <path d="M6.79 5.093A.5.5 0 0 0 6 5.5v5a.5.5 0 0 0 .79.407l3.5-2.5a.5.5 0 0 0 0-.814l-3.5-2.5z" />
+                            </svg>
+                          </div>
+                        </div>
                       </Link>
                     )}
                     {/* Audio call message */}

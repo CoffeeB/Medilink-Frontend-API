@@ -14,6 +14,7 @@ import { Button } from "@/components/ui/button";
 import SignatureCanvas from "react-signature-canvas";
 import { newForm } from "@/hooks/form";
 import { marketerClientAppointments, createMarketerAppointment, editClientAppointmentAsMarketer } from "@/hooks/appointments";
+import Cookies from "js-cookie";
 
 type ClientStatus = "Submitted" | "Pending" | "Review";
 
@@ -38,6 +39,7 @@ export default function MarketerClientsList() {
   const [endDate, setEndDate] = useState("");
   const [open, setOpen] = useState(false);
   const [formMode, setFormMode] = useState<"view" | "edit" | "create">("view");
+  const [loggedInUser, setLoggedInUser] = useState<any>(null);
   const [form, setForm] = useState<any>({
     clientName: "",
     sex: "",
@@ -61,6 +63,20 @@ export default function MarketerClientsList() {
 
     getClientAppointments();
   }, []);
+
+  useEffect(() => {
+    if (!loggedInUser) {
+      const user = Cookies.get("user");
+      if (user) {
+        try {
+          const parsedUser = JSON.parse(user);
+          setLoggedInUser(parsedUser);
+        } catch (err) {
+          console.error("Failed to parse user cookie", err);
+        }
+      }
+    }
+  }, [loggedInUser]);
 
   const filteredDiagnoses = diagnoses?.filter((diagnosis: any) => {
     const matchesSearch = diagnosis?.client?.name?.toLowerCase().includes(searchTerm.toLowerCase()) || diagnosis?.status?.toLowerCase().includes(searchTerm.toLowerCase());
@@ -88,17 +104,24 @@ export default function MarketerClientsList() {
 
     const doctorSignature = sigRef.current && !sigRef.current.isEmpty() ? sigRef.current.getCanvas().toDataURL("image/png") : null;
 
+    const signatureUrl = await handleSignatureSave();
+
+    if (!signatureUrl) {
+      console.error("Signature upload failed");
+      return;
+    }
+
     const payload = {
       // keep appointment id so backend knows which to update
       id: selected?._id,
 
       // doctor-related data
-      assessment,
+      // assessment,
       status: statusSel,
-      signature: doctorSignature,
+      signature: signatureUrl,
 
       // include all form fields from patient appointment
-      clientName: selected?.client?.name,
+      clientName: selected?.clientName,
       sex: selected?.sex,
       age: selected?.age,
       date: selected?.date,
@@ -124,27 +147,66 @@ export default function MarketerClientsList() {
     setTimeout(() => sigRef.current?.clear(), 0);
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault(); // stop full page refresh
+  const handleSignatureSave = async () => {
+    if (!sigRef.current) return;
+
+    // Convert base64 signature to blob
+    const dataUrl = sigRef.current.toDataURL("image/png");
+    const res = await fetch(dataUrl);
+    const blob = await res.blob();
+    const file = new File([blob], "signature.png", { type: "image/png" });
 
     try {
-      console.log("Submitting form:", form);
+      const formData = new FormData();
+      formData.append("file", file);
+      formData.append("userId", loggedInUser.id); // pass user ID
 
+      const response = await fetch("/api/upload/signature", {
+        method: "POST",
+        body: formData,
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.fileUrl) {
+        console.log("✅ Signature uploaded:", data.fileUrl);
+        return data.fileUrl;
+      } else {
+        console.error("Upload failed:", data.error);
+        return null;
+      }
+    } catch (err) {
+      console.error("Upload error:", err);
+      return null;
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    try {
+      // Save signature first
+      const signatureUrl = await handleSignatureSave();
+
+      if (!signatureUrl) {
+        console.error("Signature upload failed");
+        return;
+      }
+
+      // Payload should contain the S3 URL, not base64
       const payload = {
-        signature: form?.signature,
-        clientName: form?.client?.name,
+        signature: signatureUrl,
+        clientName: form?.clientName,
         sex: form?.sex,
         age: form?.age,
         date: form?.date,
         time: form?.time,
-        details: form?.description,
         address: form?.address,
       };
 
       const response = await createMarketerAppointment(payload);
-      const clientDiagnoses = response?.appointment;
 
-      // optionally close modal
+      const clientDiagnoses = response?.appointment;
       setOpen(false);
       setDiagnoses((prev) => [...prev, clientDiagnoses]);
 
@@ -156,7 +218,6 @@ export default function MarketerClientsList() {
         age: "",
         date: "",
         time: "",
-        description: "",
         address: "",
         signature: "",
       });

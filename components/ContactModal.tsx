@@ -21,6 +21,7 @@ interface Contact {
   avatar?: string;
   isOnline?: boolean;
   isGroup?: boolean;
+  status: string;
 }
 
 interface ContactModalProps {
@@ -68,7 +69,7 @@ export default function ContactModal({ open, onClose, contacts, onSelectContact 
                     {contact?.firstname?.charAt(0)}
                     {contact?.lastname?.charAt(0)}
                   </AvatarFallback>
-                  {contact?.isOnline ? <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div> : <div className="absolute bottom-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>}
+                  {contact?.status === "online" ? <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div> : <div className="absolute bottom-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>}
                 </Avatar>
                 <div className="flex-1">
                   <p className="font-medium text-gray-900">

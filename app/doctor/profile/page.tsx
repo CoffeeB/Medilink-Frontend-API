@@ -324,13 +324,13 @@ export default function DoctorProfile() {
               {isEditing ? (
                 <>
                   <Input
-                    value={editableProfile?.clinic?.name || ""}
+                    value={editableProfile?.clinicInfo?.clinicName || ""}
                     onChange={(e) =>
                       setEditableProfile({
                         ...editableProfile,
-                        clinic: {
-                          ...editableProfile?.clinic,
-                          name: e.target.value,
+                        clinicInfo: {
+                          ...editableProfile?.clinicInfo,
+                          clinicName: e.target.value,
                         },
                       })
                     }
@@ -339,13 +339,13 @@ export default function DoctorProfile() {
                   />
 
                   <Input
-                    value={editableProfile?.clinic?.addressLine1 || ""}
+                    value={editableProfile?.clinicInfo?.clinicAddress || ""}
                     onChange={(e) =>
                       setEditableProfile({
                         ...editableProfile,
-                        clinic: {
-                          ...editableProfile?.clinic,
-                          addressLine1: e.target.value,
+                        clinicInfo: {
+                          ...editableProfile?.clinicInfo,
+                          clinicAddress: e.target.value,
                         },
                       })
                     }
@@ -354,28 +354,28 @@ export default function DoctorProfile() {
                   />
 
                   <Input
-                    value={editableProfile?.clinic?.addressLine2 || ""}
+                    value={editableProfile?.clinicInfo?.clinicEmail || ""}
                     onChange={(e) =>
                       setEditableProfile({
                         ...editableProfile,
-                        clinic: {
-                          ...editableProfile?.clinic,
-                          addressLine2: e.target.value,
+                        clinicInfo: {
+                          ...editableProfile?.clinicInfo,
+                          clinicEmail: e.target.value,
                         },
                       })
                     }
-                    placeholder="City, State, ZIP"
+                    placeholder="abc@example.com"
                     className="mb-2"
                   />
 
                   <Input
-                    value={editableProfile?.clinic?.phone || ""}
+                    value={editableProfile?.clinicInfo?.clinicPhone || ""}
                     onChange={(e) =>
                       setEditableProfile({
                         ...editableProfile,
-                        clinic: {
-                          ...editableProfile?.clinic,
-                          phone: e.target.value,
+                        clinicInfo: {
+                          ...editableProfile?.clinicInfo,
+                          clinicPhone: e.target.value,
                         },
                       })
                     }
@@ -384,22 +384,22 @@ export default function DoctorProfile() {
                 </>
               ) : (
                 <>
-                  <h3 className="font-semibold text-secondary text-base sm:text-lg">Auspicious Community Service, LLC</h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground">305 FM 517 Road E.</p>
-                  <p className="text-xs sm:text-sm text-muted-foreground">Dickinson, TX 77539-1628</p>
+                  <h3 className="font-semibold text-secondary text-base sm:text-lg">{profile?.clinicInfo?.clinicName}</h3>
+                  <p className="text-xs sm:text-sm text-muted-foreground">{profile?.clinicInfo?.clinicEmail}</p>
+                  <p className="text-xs sm:text-sm text-muted-foreground">{profile?.clinicInfo?.clinicAddress}</p>
                   <div className="flex items-center gap-2 border rounded-lg p-2 mt-2 text-emerald-600">
                     <Phone className="w-4 h-4" />
-                    <span className="text-sm sm:text-base">{profile?.clinic?.phone}</span>
+                    <span className="text-sm sm:text-base">{profile?.clinicInfo?.clinicPhone}</span>
                   </div>
                 </>
               )}
             </div>
 
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
-              <div className="space-y-3 sm:space-y-4">
+              {/* <div className="space-y-3 sm:space-y-4">
                 <p className="font-medium text-sm sm:text-base">Doctor Signature</p>
                 <div className="flex items-center justify-center border rounded-lg p-3 sm:p-4 h-20 sm:h-24 bg-gray-50">{clientSignature ? <Image src={profile?.signatureUrl} alt="Client Signature" height={100} width={100} className="h-full w-auto" /> : <p className="text-muted-foreground text-xs sm:text-sm"></p>}</div>
-              </div>
+              </div> */}
 
               <div className="space-y-3 sm:space-y-4 mt-1">
                 <p className="font-medium text-sm sm:text-base">Reset Password</p>

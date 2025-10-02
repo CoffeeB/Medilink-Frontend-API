@@ -24,6 +24,7 @@ interface Contact {
   avatar?: string;
   isOnline?: boolean;
   isGroup?: boolean;
+  status: string;
 }
 
 type CallState =
@@ -1122,7 +1123,7 @@ export default function ChatDashboard() {
               <div className="flex items-center space-x-3">
                 <div className="relative">
                   <img src={contact?.avatar || "/placeholder.svg"} alt={contact?.firstname} className="w-12 h-12 rounded-full object-cover bg-gray-200" />
-                  {contact?.isOnline ? <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div> : <div className="absolute bottom-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>}
+                  {contact?.status === "online" ? <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div> : <div className="absolute bottom-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-start">

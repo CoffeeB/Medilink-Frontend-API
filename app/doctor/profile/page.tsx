@@ -399,30 +399,6 @@ export default function DoctorProfile() {
               <div className="space-y-3 sm:space-y-4">
                 <p className="font-medium text-sm sm:text-base">Doctor Signature</p>
                 <div className="flex items-center justify-center border rounded-lg p-3 sm:p-4 h-20 sm:h-24 bg-gray-50">{clientSignature ? <Image src={profile?.signatureUrl} alt="Client Signature" height={100} width={100} className="h-full w-auto" /> : <p className="text-muted-foreground text-xs sm:text-sm"></p>}</div>
-                <Dialog open={openClientSignature} onOpenChange={setOpenClientSignature}>
-                  <DialogTrigger asChild>
-                    <Button variant="secondary" className="w-full text-sm sm:text-base cursor-pointer">
-                      Update Signature
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="w-[90vw] max-w-md sm:max-w-lg">
-                    <DialogHeader>
-                      <DialogTitle>Update Signature</DialogTitle>
-                      <UpdateClientSignatureForm onSignatureUpdate={setClientSignature} setOpen={setOpenClientSignature} />
-                    </DialogHeader>
-                  </DialogContent>
-                </Dialog>
-                {/* <Button variant="outline" className="w-full text-sm sm:text-base cursor-pointer" onClick={() => setOpenClientPin(true)}>
-                  Change PIN?
-                </Button> */}
-                {/* <Dialog open={openClientPin} onOpenChange={setOpenClientPin}>
-                  <DialogContent className="w-[90vw] max-w-md sm:max-w-lg">
-                    <DialogHeader>
-                      <DialogTitle>Change Client PIN</DialogTitle>
-                    </DialogHeader>
-                    <ChangePinForm setOpen={setOpenClientPin} onPinChange={handleClientPinChange} />
-                  </DialogContent>
-                </Dialog> */}
               </div>
 
               <div className="space-y-3 sm:space-y-4 mt-1">

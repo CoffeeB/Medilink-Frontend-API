@@ -14,8 +14,10 @@ export async function POST(req: Request) {
       );
     }
 
+    console.log("profile id - ", userId);
+
     // Build path: avatars/{userId}/{filename}
-    const filePath = `avatars/${userId}/${file.name}`;
+    const filePath = `${userId}/${file.name}`;
 
     // Upload to Supabase storage (avatar bucket, private)
     const { error: uploadError } = await supabase.storage

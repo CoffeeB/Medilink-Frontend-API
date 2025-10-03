@@ -9,6 +9,7 @@ import Cookies from "js-cookie";
 import { format } from "date-fns";
 import { getProfileById } from "@/hooks/profile";
 import Link from "next/link";
+import { socket } from "@/lib/socket";
 
 interface Contact {
   email: string;
@@ -429,6 +430,55 @@ export default function ChatDashboard() {
       }
     }
   }, [loggedInUser]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    // 🔗 Handle connection
+    socket.on("connect", () => {
+      console.log("✅ Socket connected:", socket.id);
+
+      if (loggedInUser?.id) {
+        socket.emit("join", loggedInUser?.id);
+        console.log("🟢 Sent join for user:", loggedInUser?.id);
+      }
+    });
+
+    socket.on("disconnect", () => {
+      console.log("❌ Socket disconnected");
+    });
+
+    // 👥 Presence listeners
+    socket.on("user:online", ({ userId }) => {
+      console.log("📡 user:online event received for:", userId);
+
+      setContacts((prev: any) =>
+        prev.map((conv: any) => ({
+          ...conv,
+          participants: conv.participants.map((p: any) => (String(p._id) === String(userId) ? { ...p, isOnline: true } : p)),
+        }))
+      );
+    });
+
+    socket.on("user:offline", ({ userId, lastSeen }) => {
+      console.log("📡 user:offline event received for:", userId, "last seen:", lastSeen);
+
+      setContacts((prev: any) =>
+        prev.map((conv: any) => ({
+          ...conv,
+          participants: conv.participants.map((p: any) => (String(p._id) === String(userId) ? { ...p, isOnline: false, lastSeen } : p)),
+        }))
+      );
+    });
+
+    // 🧹 Cleanup
+    return () => {
+      socket.off("connect");
+      socket.off("disconnect");
+      socket.off("user:online");
+      socket.off("user:offline");
+    };
+  }, [loggedInUser, socket]);
 
   const transformedContacts = contacts?.map((contact: any) => {
     const otherParticipant = contact?.participants?.find((p: any) => {
@@ -1123,7 +1173,7 @@ export default function ChatDashboard() {
               <div className="flex items-center space-x-3">
                 <div className="relative">
                   <img src={contact?.avatar || "/placeholder.svg"} alt={contact?.firstname} className="w-12 h-12 rounded-full object-cover bg-gray-200" />
-                  {contact?.status === "online" ? <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div> : <div className="absolute bottom-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>}
+                  {contact?.isOnline ? <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div> : <div className="absolute bottom-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-start">

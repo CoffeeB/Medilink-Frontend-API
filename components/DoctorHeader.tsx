@@ -15,6 +15,7 @@ import { seeAllNotifications } from "@/hooks/notifications";
 import DoctorCalendarView from "./DoctorCalendarView";
 import DoctorCalendarViewModal from "./DoctorCalendarViewModal";
 import { useRouter } from "next/navigation";
+import { socket } from "@/lib/socket";
 
 const DoctorHeader = () => {
   // const pathname = usePathname()
@@ -24,6 +25,7 @@ const DoctorHeader = () => {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [selectedNotification, setSelectedNotification] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loggedInUser, setLoggedInUser] = useState<any>(null);
 
   const handleItemClick = async (notification: any) => {
     if (notification.link) {
@@ -41,6 +43,30 @@ const DoctorHeader = () => {
   const isActive = (path: string) => {
     return typeof window !== "undefined" && window.location.pathname === path;
   };
+
+  useEffect(() => {
+    if (!socket) return;
+
+    // 🔗 Handle connection
+    socket.on("connect", () => {
+      console.log("✅ Socket connected:", socket.id);
+
+      if (loggedInUser?.id) {
+        socket.emit("join", loggedInUser?.id);
+        console.log("🟢 Sent join for user:", loggedInUser?.id);
+      }
+    });
+
+    socket.on("disconnect", () => {
+      console.log("❌ Socket disconnected");
+    });
+
+    // 🧹 Cleanup
+    return () => {
+      socket.off("connect");
+      socket.off("disconnect");
+    };
+  }, [loggedInUser, socket]);
 
   const logout = () => {
     Cookies.remove("token");
@@ -71,6 +97,20 @@ const DoctorHeader = () => {
   //   // Cleanup when component unmounts
   //   return () => clearInterval(interval);
   // }, []);
+
+  useEffect(() => {
+    if (!loggedInUser) {
+      const user = Cookies.get("user");
+      if (user) {
+        try {
+          const parsedUser = JSON.parse(user);
+          setLoggedInUser(parsedUser);
+        } catch (err) {
+          console.error("Failed to parse user cookie", err);
+        }
+      }
+    }
+  }, [loggedInUser]);
 
   const handleLogout = async () => {
     try {

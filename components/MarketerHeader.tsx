@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useEffect } from "react";
 import { useState } from "react";
 import Image from "next/image";
 import { Button } from "./ui/button";
@@ -11,15 +11,56 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import AvatarUpload from "./AvatarUpload";
 import { useRouter } from "next/navigation";
 import { logout } from "@/hooks/auth";
+import { socket } from "@/lib/socket";
+import Cookies from "js-cookie";
 
 const MarketerHeader = () => {
   // const pathname = usePathname()
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [loggedInUser, setLoggedInUser] = useState<any>(null);
 
   const isActive = (path: string) => {
     return typeof window !== "undefined" && window.location.pathname === path;
   };
+
+  useEffect(() => {
+    if (!loggedInUser) {
+      const user = Cookies.get("user");
+      if (user) {
+        try {
+          const parsedUser = JSON.parse(user);
+          setLoggedInUser(parsedUser);
+        } catch (err) {
+          console.error("Failed to parse user cookie", err);
+        }
+      }
+    }
+  }, [loggedInUser]);
+
+  useEffect(() => {
+    if (!socket) return;
+
+    // 🔗 Handle connection
+    socket.on("connect", () => {
+      console.log("✅ Socket connected:", socket.id);
+
+      if (loggedInUser?.id) {
+        socket.emit("join", loggedInUser?.id);
+        console.log("🟢 Sent join for user:", loggedInUser?.id);
+      }
+    });
+
+    socket.on("disconnect", () => {
+      console.log("❌ Socket disconnected");
+    });
+
+    // 🧹 Cleanup
+    return () => {
+      socket.off("connect");
+      socket.off("disconnect");
+    };
+  }, [loggedInUser, socket]);
 
   const handleLogout = async () => {
     try {

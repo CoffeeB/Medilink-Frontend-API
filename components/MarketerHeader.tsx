@@ -136,9 +136,9 @@ const MarketerHeader = () => {
             <Link onClick={() => setMobileOpen(false)} href="/marketer/messages" className={`hover:text-primary ${isActive("/marketer/messages") ? "text-primary" : ""}`}>
               Messaging
             </Link>
-            <Link onClick={() => setMobileOpen(false)} href="/marketer/register-a-doc" className={`hover:text-primary ${isActive("/marketer/register-a-doc") ? "text-primary" : ""}`}>
+            {/* <Link onClick={() => setMobileOpen(false)} href="/marketer/register-a-doc" className={`hover:text-primary ${isActive("/marketer/register-a-doc") ? "text-primary" : ""}`}>
               Register a Doctor
-            </Link>
+            </Link> */}
           </nav>
         )}
       </div>

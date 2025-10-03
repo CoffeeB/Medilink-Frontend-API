@@ -29,6 +29,11 @@ export async function updateProfile(data: any) {
   return res.data;
 }
 
+export async function updatePassword(data: any) {
+  const res = await axiosInstance.post("/api/auth/changePassword", data);
+  return res.data;
+}
+
 export const getProfileById = async (id: any) => {
   const token = Cookies.get("token");
   if (!token) {

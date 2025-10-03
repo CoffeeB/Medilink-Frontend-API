@@ -16,7 +16,7 @@ import { newForm } from "@/hooks/form";
 import { marketerClientAppointments, createMarketerAppointment, editClientAppointmentAsMarketer } from "@/hooks/appointments";
 import Cookies from "js-cookie";
 
-type ClientStatus = "Submitted" | "Pending" | "Review";
+type ClientStatus = "completed" | "scheduled" | "accepted";
 
 interface Diagnosis {
   id: string;
@@ -86,7 +86,7 @@ export default function MarketerClientsList() {
 
   const [selected, setSelected] = useState<any>(null);
   const [assessment, setAssessment] = useState("");
-  const [statusSel, setStatusSel] = useState("pending");
+  const [statusSel, setStatusSel] = useState("scheduled");
   const sigRef = useRef<SignatureCanvas | null>(null);
 
   const handleRowClick = (d: any) => {
@@ -139,7 +139,7 @@ export default function MarketerClientsList() {
     }
   };
 
-  const canEdit = selected && (selected?.status === "pending" || selected?.status === "review");
+  const canEdit = selected && (selected?.status === "scheduled" || selected?.status === "review");
 
   function handleAddAppointment() {
     setFormMode("create");
@@ -271,10 +271,10 @@ export default function MarketerClientsList() {
                     ?.filter((d: any) => d?.client?.name && d?.date && d?.status)
                     ?.map((diagnosis: any, index: any) => (
                       <TableRow key={index} className="cursor-pointer hover:bg-accent" onClick={() => handleRowClick(diagnosis)}>
-                        <TableCell className="text-xs sm:text-sm">{new Date(diagnosis?.date).toLocaleDateString()}</TableCell>
+                        <TableCell className="text-xs sm:text-sm">{diagnosis?.date}</TableCell>
                         <TableCell className="text-xs sm:text-sm">{diagnosis?.client?.name}</TableCell>
                         <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${diagnosis?.status === "accepted" ? "bg-green-100 text-green-800" : diagnosis?.status === "pending" ? "bg-yellow-100 text-yellow-800" : "bg-blue-100 text-blue-800"}`}>{diagnosis?.status}</span>
+                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${diagnosis?.status === "accepted" ? "bg-green-100 text-green-800" : diagnosis?.status === "scheduled" ? "bg-yellow-100 text-yellow-800" : "bg-blue-100 text-blue-800"}`}>{diagnosis?.status}</span>
                         </TableCell>
                       </TableRow>
                     ))
@@ -337,8 +337,8 @@ export default function MarketerClientsList() {
                           </SelectTrigger>
                           <SelectContent className="bg-white shadow-md border rounded-md">
                             <SelectItem value="Pending">Pending</SelectItem>
-                            <SelectItem value="Submitted">Submitted</SelectItem>
-                            <SelectItem value="Review">Review</SelectItem>
+                            <SelectItem value="completed">Submitted</SelectItem>
+                            <SelectItem value="accepted">Review</SelectItem>
                           </SelectContent>
                         </Select>
                       </div> */}
@@ -430,8 +430,8 @@ export default function MarketerClientsList() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="Pending">Pending</SelectItem>
-                      <SelectItem value="Submitted">Submitted</SelectItem>
-                      <SelectItem value="Review">Review</SelectItem>
+                      <SelectItem value="completed">Submitted</SelectItem>
+                      <SelectItem value="accepted">Review</SelectItem>
                     </SelectContent>
                   </Select>
                 </div> */}

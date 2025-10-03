@@ -11,23 +11,24 @@ import ChangePinForm from "@/components/forms/ChangePinForm";
 import AvatarUpload from "@/components/AvatarUpload";
 import Image from "next/image";
 import { format } from "date-fns";
-import { getProfile, updateProfile } from "@/hooks/profile"; // 🔑 add update function in backend
+import { getProfile, updatePassword, updateProfile } from "@/hooks/profile"; // 🔑 add update function in backend
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 export default function MarketerProfile() {
   const [profile, setProfile] = useState<any>(null);
   const [editableProfile, setEditableProfile] = useState<any>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [openClientSignature, setOpenClientSignature] = useState(false);
-  const [openClientPin, setOpenClientPin] = useState(false);
-  const [clientSignature, setClientSignature] = useState<string | null>(null);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [uploadedFiles, setUploadedFiles] = useState<{
     certificate?: File;
     driversLicense?: File;
     ssn?: File;
     resume?: File;
   }>({});
+  const [passwordError, setPasswordError] = useState("");
 
   const [isDragging, setIsDragging] = useState<string | null>(null);
 
@@ -53,61 +54,6 @@ export default function MarketerProfile() {
   const handleRemoveFile = (field: keyof typeof uploadedFiles) => {
     setUploadedFiles((prev) => ({ ...prev, [field]: undefined }));
   };
-
-  //   <div
-  //     className={`border-2 border-dashed rounded-lg p-6 transition-colors bg-gray-100 ${isDragging === field ? "border-blue-500 bg-blue-50" : "border-gray-300 bg-gray-50"}`}
-  //     onDragOver={(e) => {
-  //       e.preventDefault();
-  //       setIsDragging(field);
-  //     }}
-  //     onDragLeave={() => setIsDragging(null)}
-  //     onDrop={(e) => {
-  //       e.preventDefault();
-  //       setIsDragging(null);
-  //       const file = e.dataTransfer.files?.[0];
-  //       if (file) handleFileUpload(field, file);
-  //     }}>
-  //     <div className="flex items-center justify-between">
-  //       <div className="flex items-center space-x-3">
-  //         {icon}
-  //         <div>
-  //           <p className="text-sm font-medium text-gray-700">{title}</p>
-  //           <p className="text-xs text-gray-500">Drag & drop your file or click to upload</p>
-  //         </div>
-  //       </div>
-  //       <Button type="button" variant="secondary" size="sm" onClick={() => document.getElementById(field)?.click()}>
-  //         <Upload className="h-4 w-4 mr-2" />
-  //         {uploadedFiles[field] ? "Change" : "Upload"}
-  //       </Button>
-  //     </div>
-
-  //     <input
-  //       id={field}
-  //       type="file"
-  //       className="hidden"
-  //       accept=".jpg,.jpeg,.png,.pdf,.doc,.docx"
-  //       onChange={(e) => {
-  //         const file = e.target.files?.[0];
-  //         if (file) handleFileUpload(field, file);
-  //       }}
-  //     />
-
-  //     {/* Preview section */}
-  //     {uploadedFiles[field] && (
-  //       <div className="mt-4 flex items-center justify-between bg-white p-3 rounded-lg shadow-sm">
-  //         <div className="flex items-center space-x-3">
-  //           <div>
-  //             <p className="text-sm font-medium text-gray-700">{uploadedFiles[field]?.name}</p>
-  //             <p className="text-xs text-gray-500">{((uploadedFiles[field]?.size || 0) / 1024).toFixed(1)} KB</p>
-  //           </div>
-  //         </div>
-  //         <Button variant="ghost" size="sm" onClick={() => handleRemoveFile(field)}>
-  //           Remove
-  //         </Button>
-  //       </div>
-  //     )}
-  //   </div>
-  // );
 
   const handleClientPinChange = (oldPin: string, newPin: string) => {
     console.log("Changing client PIN:", { oldPin, newPin });
@@ -151,6 +97,25 @@ export default function MarketerProfile() {
       }
     } catch (err) {
       console.error("Upload error:", err);
+    }
+  };
+
+  const handleResetPassword = async () => {
+    setPasswordError("");
+    if (newPassword !== confirmPassword) {
+      setPasswordError("Passwords do not match");
+      return;
+    }
+
+    try {
+      const response = await updatePassword({ currentPassword, newPassword });
+
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      setPasswordError("");
+    } catch (error: any) {
+      setPasswordError(error.response?.data?.message || "Failed to reset password");
     }
   };
 
@@ -395,20 +360,32 @@ export default function MarketerProfile() {
               )}
             </div>
 
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
-              {/* <div className="space-y-3 sm:space-y-4">
-                <p className="font-medium text-sm sm:text-base">Doctor Signature</p>
-                <div className="flex items-center justify-center border rounded-lg p-3 sm:p-4 h-20 sm:h-24 bg-gray-50">{clientSignature ? <Image src={profile?.signatureUrl} alt="Client Signature" height={100} width={100} className="h-full w-auto" /> : <p className="text-muted-foreground text-xs sm:text-sm"></p>}</div>
-              </div> */}
-
+            <div className="grid grid-cols-1 gap-4 sm:gap-6">
               <div className="space-y-3 sm:space-y-4 mt-1">
                 <p className="font-medium text-sm sm:text-base">Reset Password</p>
 
+                {passwordError && (
+                  <Alert variant="destructive" className="mb-6">
+                    <AlertDescription className="border-red-500 text-red-500">{passwordError}</AlertDescription>
+                  </Alert>
+                )}
+
                 {/* Password Input */}
                 <div>
-                  <label className="block mb-1 text-xs sm:text-sm">Password</label>
+                  <label className="block mb-1 text-xs sm:text-sm">Current Password</label>
                   <div className="relative">
-                    <Input placeholder="Enter your password" type={showPassword ? "text" : "password"} autoComplete="current-password" className="pr-10 text-sm sm:text-base" />
+                    <Input name="currentPassword" placeholder="Enter your password" type={showPassword ? "text" : "password"} autoComplete="current-password" className="pr-10 text-sm sm:text-base" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">
+                      {showPassword ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Password Input */}
+                <div>
+                  <label className="block mb-1 text-xs sm:text-sm">New Password</label>
+                  <div className="relative">
+                    <Input name="newPassword" placeholder="Enter new password" type={showPassword ? "text" : "password"} autoComplete="current-password" className="pr-10 text-sm sm:text-base" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
                     <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">
                       {showPassword ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                     </button>
@@ -419,14 +396,14 @@ export default function MarketerProfile() {
                 <div>
                   <label className="block mb-1 text-xs sm:text-sm">Confirm Password</label>
                   <div className="relative">
-                    <Input placeholder="Confirm new password" type={showConfirmPassword ? "text" : "password"} autoComplete="new-password" className="pr-10 text-sm sm:text-base" />
-                    <button type="button" onClick={() => setShowConfirmPassword(!showConfirmPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">
-                      {showConfirmPassword ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
+                    <Input name="confirmPassword" placeholder="Confirm new password" type={showPassword ? "text" : "password"} autoComplete="new-password" className="pr-10 text-sm sm:text-base" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} />
+                    <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700">
+                      {showPassword ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
                     </button>
                   </div>
                 </div>
 
-                <Button variant="secondary" className="w-full text-sm sm:text-base cursor-pointer">
+                <Button onClick={handleResetPassword} variant="secondary" className="w-full text-sm sm:text-base cursor-pointer">
                   Reset Password
                 </Button>
               </div>

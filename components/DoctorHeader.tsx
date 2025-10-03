@@ -128,7 +128,7 @@ const DoctorHeader = () => {
         <div className="flex items-center justify-between h-[80px] px-6 py-3">
           {/* Logo */}
           <div className="flex items-center space-x-4">
-            <Image src="/images/logo.svg" alt="Excel Connect logo" width={250} height={32} priority />
+            <Image src="/images/logo.svg" alt="Excel connect logo" className="md:w-[250px] w-[125px]" width={250} height={32} priority />
           </div>
 
           {/* Desktop Nav */}
@@ -170,7 +170,7 @@ const DoctorHeader = () => {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full bg-transparent border border-black/70 cursor-pointer overflow-hidden">
-                  <Image src="/images/Blank_Profile.jpg" alt="Excel Connect logo" fill className="object-cover rounded-full" priority />
+                  <Image src={loggedInUser?.avatar || "/images/Blank_Profile.jpg"} alt="Excel Connect logo" fill className="object-cover rounded-full" priority />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56 bg-white" align="end" forceMount>

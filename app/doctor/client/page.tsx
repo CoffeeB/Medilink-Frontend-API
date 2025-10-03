@@ -16,7 +16,7 @@ import { newForm } from "@/hooks/form";
 import Cookies from "js-cookie";
 import { clientAppointments, createDoctorAppointment, editClientAppointmentAsDoctor } from "@/hooks/appointments";
 
-type ClientStatus = "Submitted" | "Pending" | "Review";
+type ClientStatus = "completed" | "scheduled" | "accepted";
 
 interface Diagnosis {
   id: string;
@@ -87,7 +87,7 @@ export default function DoctorClientsList() {
 
   const [selected, setSelected] = useState<any>(null);
   const [assessment, setAssessment] = useState("");
-  const [statusSel, setStatusSel] = useState("pending");
+  const [statusSel, setStatusSel] = useState("scheduled");
   const sigRef = useRef<SignatureCanvas | null>(null);
 
   const handleRowClick = (d: any) => {
@@ -140,7 +140,7 @@ export default function DoctorClientsList() {
     }
   };
 
-  const canEdit = selected && (selected?.status === "pending" || selected?.status === "review");
+  const canEdit = selected && (selected?.status === "scheduled" || selected?.status === "completed");
 
   function handleAddAppointment() {
     setFormMode("create");
@@ -277,7 +277,7 @@ export default function DoctorClientsList() {
                         <TableCell className="text-xs sm:text-sm">{diagnosis?.date}</TableCell>
                         <TableCell className="text-xs sm:text-sm">{diagnosis?.client?.name}</TableCell>
                         <TableCell>
-                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${diagnosis?.status === "accepted" ? "bg-green-100 text-green-800" : diagnosis?.status === "pending" ? "bg-yellow-100 text-yellow-800" : "bg-blue-100 text-blue-800"}`}>{diagnosis?.status}</span>
+                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${diagnosis?.status === "accepted" ? "bg-green-100 text-green-800" : diagnosis?.status === "scheduled" ? "bg-yellow-100 text-yellow-800" : "bg-blue-100 text-blue-800"}`}>{diagnosis?.status}</span>
                         </TableCell>
                       </TableRow>
                     ))

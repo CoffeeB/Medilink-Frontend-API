@@ -226,6 +226,18 @@ export default function MarketerClientsList() {
     }
   };
 
+  const deleteClient = async (id: string) => {
+    try {
+      // simulate network delay
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // simulate API success
+      setDiagnoses((prev: any) => prev.filter((client: any) => client._id !== id));
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
   return (
     <div className="container max-w-[1350px] mx-auto p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
       <Card>
@@ -257,6 +269,7 @@ export default function MarketerClientsList() {
                   <TableHead className="text-xs sm:text-sm">Date</TableHead>
                   <TableHead className="text-xs sm:text-sm">Client Name</TableHead>
                   <TableHead className="text-xs sm:text-sm">Status</TableHead>
+                  <TableHead className="text-xs sm:text-sm">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -275,6 +288,16 @@ export default function MarketerClientsList() {
                         <TableCell className="text-xs sm:text-sm">{diagnosis?.client?.name}</TableCell>
                         <TableCell>
                           <span className={`px-2 py-1 rounded-full text-xs font-semibold ${diagnosis?.status === "accepted" ? "bg-green-100 text-green-800" : diagnosis?.status === "scheduled" ? "bg-yellow-100 text-yellow-800" : "bg-blue-100 text-blue-800"}`}>{diagnosis?.status}</span>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            onClick={(e) => {
+                              e.stopPropagation(); // 🚀 prevents row click
+                              deleteClient(diagnosis?._id);
+                            }}
+                            className="rounded-lg bg-red-600 hover:bg-red-200 text-white hover:text-red-600 cursor-pointer text-sm py-1 h-auto">
+                            Delete
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))

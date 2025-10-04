@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import SignatureCanvas from "react-signature-canvas";
 import { newForm } from "@/hooks/form";
 import Cookies from "js-cookie";
-import { clientAppointments, createDoctorAppointment, editClientAppointmentAsDoctor } from "@/hooks/appointments";
+import { clientAppointments, createDoctorAppointment, deleteClientAppointment, editClientAppointmentAsDoctor } from "@/hooks/appointments";
 
 type ClientStatus = "completed" | "scheduled" | "accepted";
 
@@ -36,6 +36,7 @@ export default function DoctorClientsList() {
   const [startDate, setStartDate] = useState("");
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [diagnoses, setDiagnoses] = useState<any[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [endDate, setEndDate] = useState("");
   const [open, setOpen] = useState(false);
   const [formMode, setFormMode] = useState<"view" | "edit" | "create">("view");
@@ -230,14 +231,16 @@ export default function DoctorClientsList() {
   };
 
   const deleteClient = async (id: string) => {
+    setIsDeleting(true);
     try {
-      // simulate network delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await deleteClientAppointment(id);
 
       // simulate API success
       setDiagnoses((prev: any) => prev.filter((client: any) => client._id !== id));
     } catch (error) {
       console.log(error);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -298,6 +301,7 @@ export default function DoctorClientsList() {
                               e.stopPropagation(); // 🚀 prevents row click
                               deleteClient(diagnosis?._id);
                             }}
+                            disabled={isDeleting}
                             className="rounded-lg bg-red-600 hover:bg-red-200 text-white hover:text-red-600 cursor-pointer text-sm py-1 h-auto">
                             Delete
                           </Button>

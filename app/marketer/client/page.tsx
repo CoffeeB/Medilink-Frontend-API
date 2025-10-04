@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import SignatureCanvas from "react-signature-canvas";
 import { newForm } from "@/hooks/form";
-import { marketerClientAppointments, createMarketerAppointment, editClientAppointmentAsMarketer } from "@/hooks/appointments";
+import { marketerClientAppointments, createMarketerAppointment, editClientAppointmentAsMarketer, deleteClientAppointment } from "@/hooks/appointments";
 import Cookies from "js-cookie";
 
 type ClientStatus = "completed" | "scheduled" | "accepted";
@@ -40,6 +40,7 @@ export default function MarketerClientsList() {
   const [open, setOpen] = useState(false);
   const [formMode, setFormMode] = useState<"view" | "edit" | "create">("view");
   const [loggedInUser, setLoggedInUser] = useState<any>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [form, setForm] = useState<any>({
     clientName: "",
     sex: "",
@@ -227,14 +228,16 @@ export default function MarketerClientsList() {
   };
 
   const deleteClient = async (id: string) => {
+    setIsDeleting(true);
     try {
-      // simulate network delay
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      await deleteClientAppointment(id);
 
       // simulate API success
       setDiagnoses((prev: any) => prev.filter((client: any) => client._id !== id));
     } catch (error) {
       console.log(error);
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -295,6 +298,7 @@ export default function MarketerClientsList() {
                               e.stopPropagation(); // 🚀 prevents row click
                               deleteClient(diagnosis?._id);
                             }}
+                            disabled={isDeleting}
                             className="rounded-lg bg-red-600 hover:bg-red-200 text-white hover:text-red-600 cursor-pointer text-sm py-1 h-auto">
                             Delete
                           </Button>

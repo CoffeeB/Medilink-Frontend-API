@@ -13,6 +13,11 @@ export const newAppointment = async (formId: any, date: any) => {
   return response.data;
 };
 
+export const deleteClientAppointment = async (id: any) => {
+  const response = await axiosInstance.delete(`/api/appointments/${id}`);
+  return response.data;
+};
+
 export const editClientAppointmentAsDoctor = async (form: any) => {
   const token = Cookies.get("token");
   if (!token) {

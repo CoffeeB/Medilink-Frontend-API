@@ -46,7 +46,7 @@ const registerFormSchema = z
       street: z.string().min(1, "Street is required"),
       streetLine2: z.string().optional(),
       city: z.string().min(1, "City is required"),
-      region: z.string().min(1, "Region is required"),
+      region: z.string().min(1, "State is required"),
       postalCode: z.string().min(1, "Postal code is required"),
       country: z.string().min(1, "Country is required"),
     }),
@@ -389,7 +389,7 @@ export default function MarketerRegister() {
                       render={({ field }) => (
                         <FormItem>
                           <FormControl>
-                            <Input placeholder="Region" {...field} />
+                            <Input placeholder="State" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

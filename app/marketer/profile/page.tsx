@@ -210,7 +210,7 @@ export default function MarketerProfile() {
                           address: { ...editableProfile?.address, region: e.target.value },
                         })
                       }
-                      placeholder="Region"
+                      placeholder="State"
                     />
                     <Input
                       value={editableProfile?.address?.postalCode || ""}

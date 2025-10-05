@@ -210,7 +210,7 @@ export default function DoctorProfile() {
                           address: { ...editableProfile?.address, region: e.target.value },
                         })
                       }
-                      placeholder="Region"
+                      placeholder="State"
                     />
                     <Input
                       value={editableProfile?.address?.postalCode || ""}

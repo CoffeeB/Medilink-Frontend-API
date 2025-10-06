@@ -88,13 +88,14 @@ export default function DoctorClientsList() {
 
   const [selected, setSelected] = useState<any>(null);
   const [assessment, setAssessment] = useState("");
-  const [statusSel, setStatusSel] = useState("pending");
+  const [statusSel, setStatusSel] = useState<ClientStatus | undefined>(selected?.status);
+  const [error, setError] = useState("");
   const sigRef = useRef<SignatureCanvas | null>(null);
 
   const handleRowClick = (d: any) => {
     setFormMode("view");
     setSelected(d);
-    setAssessment("");
+    setAssessment(d.description || "");
     setStatusSel(d.status);
     setOpen(true);
     setTimeout(() => sigRef.current?.clear(), 0);
@@ -150,7 +151,11 @@ export default function DoctorClientsList() {
   }
 
   const handleSignatureSave = async () => {
-    if (!sigRef.current) return;
+    setError("");
+    if (!sigRef.current || sigRef.current.isEmpty()) {
+      setError("Signature is required before submission.");
+      return;
+    }
 
     // Convert base64 signature to blob
     const dataUrl = sigRef.current.toDataURL("image/png");
@@ -329,7 +334,7 @@ export default function DoctorClientsList() {
                   <b>Client:</b> {selected?.client?.name}
                 </p>
                 <p className="text-sm sm:text-base">
-                  <b>Sex:</b> {selected?.sex ?? "—"}
+                  <b>Sex:</b> {selected?.client?.sex ?? "—"}
                 </p>
                 <p className="text-sm sm:text-base">
                   <b>Date:</b> {selected?.date}
@@ -343,7 +348,7 @@ export default function DoctorClientsList() {
                 {selected?.status === "submitted" && (
                   <>
                     <p className="text-sm sm:text-base">
-                      <b>Assessment Summary:</b> {selected?.assessment ?? "—"}
+                      <b>Assessment Summary:</b> {selected?.description ?? "—"}
                     </p>
                     <p className="text-sm sm:text-base">
                       <b>Status:</b> {selected?.status}
@@ -361,14 +366,14 @@ export default function DoctorClientsList() {
 
                       <div>
                         <Label className="mb-1 block text-xs sm:text-sm">Status</Label>
-                        <Select defaultValue={selected?.status || ""} value={statusSel} onValueChange={(v) => setStatusSel(v as ClientStatus)}>
+                        <Select value={statusSel} onValueChange={(v) => setStatusSel(v as ClientStatus)}>
                           <SelectTrigger className="text-sm sm:text-base text-black">
                             <SelectValue className="text-black" placeholder="Select status" />
                           </SelectTrigger>
                           <SelectContent className="bg-white shadow-md border rounded-md">
-                            <SelectItem value="Pending">Pending</SelectItem>
-                            <SelectItem value="Submitted">Submitted</SelectItem>
-                            <SelectItem value="Review">Review</SelectItem>
+                            <SelectItem value="pending">Pending</SelectItem>
+                            <SelectItem value="submitted">Submitted</SelectItem>
+                            <SelectItem value="review">Review</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>
@@ -386,6 +391,7 @@ export default function DoctorClientsList() {
                             }}
                             backgroundColor="white"
                           />
+                          {error && <span className="text-red-500 text-xs">{error}</span>}
                         </div>
                         <div className="flex justify-between mt-2">
                           <Button type="button" variant="outline" size="sm" onClick={() => sigRef.current?.clear()} className="text-xs sm:text-sm">
@@ -459,9 +465,9 @@ export default function DoctorClientsList() {
                       <SelectValue placeholder="Select status" />
                     </SelectTrigger>
                     <SelectContent className="bg-white">
-                      <SelectItem value="Pending">Pending</SelectItem>
-                      <SelectItem value="Submitted">Submitted</SelectItem>
-                      <SelectItem value="Review">Review</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="submitted">Submitted</SelectItem>
+                      <SelectItem value="review">Review</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -480,6 +486,7 @@ export default function DoctorClientsList() {
                       backgroundColor="white"
                       onEnd={() => setForm({ ...form, signature: sigRef.current?.toDataURL() })}
                     />
+                    {error && <span className="text-red-500 text-xs">{error}</span>}
                   </div>
                   <div className="flex justify-between mt-2">
                     <Button

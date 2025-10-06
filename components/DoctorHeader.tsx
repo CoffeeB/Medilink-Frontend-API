@@ -74,30 +74,6 @@ const DoctorHeader = () => {
     router.push("/");
   };
 
-  // const isActive = (path: string) => pathname === path
-  // useEffect(() => {
-  //   const fetchNotifications = async () => {
-  //     const doctor = false;
-  //     const marketer = true;
-
-  //     try {
-  //       const response = await seeAllNotifications();
-  //       setNotifications(response);
-  //     } catch (error: any) {
-  //       console.error(error);
-  //     }
-  //   };
-
-  //   // Call once immediately
-  //   fetchNotifications();
-
-  //   // Then set up polling
-  //   const interval = setInterval(fetchNotifications, 10000); // every 60s
-
-  //   // Cleanup when component unmounts
-  //   return () => clearInterval(interval);
-  // }, []);
-
   useEffect(() => {
     if (!loggedInUser) {
       const user = Cookies.get("user");
@@ -133,10 +109,6 @@ const DoctorHeader = () => {
 
           {/* Desktop Nav */}
           <nav className="hidden md:flex items-center space-x-9">
-            {/* <Link className={`hover:text-primary ${isActive('/doctor/dashboard') ? 'text-primary' : ''}`} href="/doctor/dashboard">Home</Link> */}
-            {/* <Link className={`hover:text-primary ${isActive("/doctor/appointments") ? "text-primary" : ""}`} href="/doctor/appointments">
-              Appointments
-            </Link> */}
             <Link className={`hover:text-primary ${isActive("/doctor/messaging") ? "text-primary" : ""}`} href="/doctor/messages">
               Messaging
             </Link>

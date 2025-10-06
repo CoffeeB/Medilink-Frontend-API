@@ -88,6 +88,7 @@ export default function MarketerClientsList() {
   const [selected, setSelected] = useState<any>(null);
   const [assessment, setAssessment] = useState("");
   const [statusSel, setStatusSel] = useState("pending");
+  const [error, setError] = useState("");
   const sigRef = useRef<SignatureCanvas | null>(null);
 
   const handleRowClick = (d: any) => {
@@ -149,7 +150,11 @@ export default function MarketerClientsList() {
   }
 
   const handleSignatureSave = async () => {
-    if (!sigRef.current) return;
+    setError("");
+    if (!sigRef.current || sigRef.current.isEmpty()) {
+      setError("Signature is required before submission.");
+      return;
+    }
 
     // Convert base64 signature to blob
     const dataUrl = sigRef.current.toDataURL("image/png");
@@ -326,7 +331,7 @@ export default function MarketerClientsList() {
                   <b>Client:</b> {selected?.client?.name}
                 </p>
                 <p className="text-sm sm:text-base">
-                  <b>Sex:</b> {selected?.sex ?? "—"}
+                  <b>Sex:</b> {selected?.client?.sex ?? "—"}
                 </p>
                 <p className="text-sm sm:text-base">
                   <b>Date:</b> {selected?.date}
@@ -392,25 +397,6 @@ export default function MarketerClientsList() {
                   <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
                 </div>
 
-                {/* <div>
-                  <Label className="text-xs sm:text-sm">Assessment Summary</Label>
-                  <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="Write your assessment..." />
-                </div>
-
-                <div>
-                  <Label className="text-xs sm:text-sm">Status</Label>
-                  <Select value={form.status} onValueChange={(v) => setForm({ ...form, status: v as ClientStatus })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="Pending">Pending</SelectItem>
-                      <SelectItem value="submitted">Submitted</SelectItem>
-                      <SelectItem value="review">Review</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div> */}
-
                 <div>
                   <Label className="text-xs sm:text-sm">Marketer Signature</Label>
                   <div className="border rounded-md p-2 bg-white">
@@ -425,6 +411,7 @@ export default function MarketerClientsList() {
                       backgroundColor="white"
                       onEnd={() => setForm({ ...form, signature: sigRef.current?.toDataURL() })}
                     />
+                    {error && <span className="text-red-500 text-xs">{error}</span>}
                   </div>
                   <div className="flex justify-between mt-2">
                     <Button

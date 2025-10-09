@@ -124,9 +124,9 @@ export default function DoctorClientsList() {
       signature: signatureUrl,
 
       // include all form fields from patient appointment
-      clientName: selected?.clientName,
-      sex: selected?.sex,
-      age: selected?.age,
+      clientName: selected?.client?.name,
+      sex: selected?.client?.sex,
+      age: selected?.client?.age,
       date: selected?.date,
       time: selected?.time,
       description: selected?.description,
@@ -134,6 +134,7 @@ export default function DoctorClientsList() {
     };
 
     try {
+      console.log("selected:", selected);
       console.log("Confirming appointment with full payload:", payload);
       await editClientAppointmentAsDoctor(payload);
       setOpen(false);

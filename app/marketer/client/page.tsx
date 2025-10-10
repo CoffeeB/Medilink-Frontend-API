@@ -13,7 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import SignatureCanvas from "react-signature-canvas";
 import { newForm } from "@/hooks/form";
-import { marketerClientAppointments, createMarketerAppointment, editClientAppointmentAsMarketer, deleteClientAppointment } from "@/hooks/appointments";
+import { marketerClientAppointments, createMarketerAppointment, editClientAppointment, deleteClientAppointment } from "@/hooks/appointments";
 import Cookies from "js-cookie";
 
 type ClientStatus = "submitted" | "pending" | "review";
@@ -134,7 +134,8 @@ export default function MarketerClientsList() {
 
     try {
       console.log("Confirming appointment with full payload:", payload);
-      await editClientAppointmentAsMarketer(payload);
+      await editClientAppointment(payload, selected?._id);
+      setDiagnoses((prev) => prev.map((d) => (d._id === selected?._id ? selected : d)));
       setOpen(false);
     } catch (error) {
       console.error("Error updating appointment:", error);

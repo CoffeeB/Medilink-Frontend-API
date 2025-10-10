@@ -18,23 +18,23 @@ export const deleteClientAppointment = async (id: any) => {
   return response.data;
 };
 
-export const editClientAppointmentAsDoctor = async (form: any) => {
+export const editClientAppointment = async (form: any, id: any) => {
   const token = Cookies.get("token");
   if (!token) {
     throw new Error("Token is required");
   }
-  const response = await axiosInstance.post("/api/appointments/doctor", form);
+  const response = await axiosInstance.put(`/api/appointments/${id}`, form);
   return response.data;
 };
 
-export const editClientAppointmentAsMarketer = async (form: any) => {
-  const token = Cookies.get("token");
-  if (!token) {
-    throw new Error("Token is required");
-  }
-  const response = await axiosInstance.post("/api/appointments/marketer", form);
-  return response.data;
-};
+// export const editClientAppointmentAsMarketer = async (form: any) => {
+//   const token = Cookies.get("token");
+//   if (!token) {
+//     throw new Error("Token is required");
+//   }
+//   const response = await axiosInstance.post("/api/appointments/marketer", form);
+//   return response.data;
+// };
 
 export const seeAllAppointments = async (doctor: boolean, marketer: boolean) => {
   const token = Cookies.get("token");

@@ -14,7 +14,7 @@ import { Button } from "@/components/ui/button";
 import SignatureCanvas from "react-signature-canvas";
 import { newForm } from "@/hooks/form";
 import Cookies from "js-cookie";
-import { clientAppointments, createDoctorAppointment, deleteClientAppointment, editClientAppointmentAsDoctor } from "@/hooks/appointments";
+import { clientAppointments, createDoctorAppointment, deleteClientAppointment, editClientAppointment } from "@/hooks/appointments";
 
 type ClientStatus = "submitted" | "pending" | "review";
 
@@ -134,9 +134,8 @@ export default function DoctorClientsList() {
     };
 
     try {
-      console.log("selected:", selected);
-      console.log("Confirming appointment with full payload:", payload);
-      await editClientAppointmentAsDoctor(payload);
+      await editClientAppointment(payload, selected?._id);
+      setDiagnoses((prev) => prev.map((d) => (d._id === selected?._id ? selected : d)));
       setOpen(false);
     } catch (error) {
       console.error("Error updating appointment:", error);

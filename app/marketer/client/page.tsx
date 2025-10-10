@@ -134,8 +134,10 @@ export default function MarketerClientsList() {
 
     try {
       console.log("Confirming appointment with full payload:", payload);
-      await editClientAppointment(payload, selected?._id);
-      setDiagnoses((prev) => prev.map((d) => (d._id === selected?._id ? selected : d)));
+      const response = await editClientAppointment(payload, selected?._id);
+      const data = response.appointment;
+
+      setDiagnoses((prev) => prev.map((d) => (d._id === data?._id ? data : d)));
       setOpen(false);
     } catch (error) {
       console.error("Error updating appointment:", error);

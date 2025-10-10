@@ -134,8 +134,10 @@ export default function DoctorClientsList() {
     };
 
     try {
-      await editClientAppointment(payload, selected?._id);
-      setDiagnoses((prev) => prev.map((d) => (d._id === selected?._id ? selected : d)));
+      const response = await editClientAppointment(payload, selected?._id);
+      const data = response.appointment;
+
+      setDiagnoses((prev) => prev.map((d) => (d._id === data?._id ? data : d)));
       setOpen(false);
     } catch (error) {
       console.error("Error updating appointment:", error);

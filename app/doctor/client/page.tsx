@@ -282,7 +282,7 @@ export default function DoctorClientsList() {
                   <TableHead className="text-xs sm:text-sm">Date</TableHead>
                   <TableHead className="text-xs sm:text-sm">Client Name</TableHead>
                   <TableHead className="text-xs sm:text-sm">Status</TableHead>
-                  {/* <TableHead className="text-xs sm:text-sm">Action</TableHead> */}
+                  <TableHead className="text-xs sm:text-sm">Action</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -302,7 +302,7 @@ export default function DoctorClientsList() {
                         <TableCell>
                           <span className={`px-2 py-1 rounded-full text-xs font-semibold ${diagnosis?.status === "review" ? "bg-green-100 text-green-800" : diagnosis?.status === "pending" ? "bg-yellow-100 text-yellow-800" : "bg-blue-100 text-blue-800"}`}>{diagnosis?.status}</span>
                         </TableCell>
-                        {/* <TableCell>
+                        <TableCell>
                           <Button
                             onClick={(e) => {
                               e.stopPropagation(); // 🚀 prevents row click
@@ -312,7 +312,7 @@ export default function DoctorClientsList() {
                             className="rounded-lg bg-red-600 hover:bg-red-200 text-white hover:text-red-600 cursor-pointer text-sm py-1 h-auto">
                             Delete
                           </Button>
-                        </TableCell> */}
+                        </TableCell>
                       </TableRow>
                     ))
                 )}

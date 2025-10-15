@@ -11,6 +11,7 @@ import { getProfileById } from "@/hooks/profile";
 import Link from "next/link";
 import { socket } from "@/lib/socket";
 import { usePeerContext } from "@/context/CallProvider";
+import { enqueueSnackbar } from "notistack";
 
 interface Contact {
   email: string;
@@ -47,7 +48,7 @@ const emojis = ["😀", "😃", "😄", "😁", "😆", "😅", "😂", "🤣", 
 
 export default function ChatDashboard() {
   // State management
-  const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showAttachmentOptions, setShowAttachmentOptions] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
@@ -363,7 +364,7 @@ export default function ChatDashboard() {
         setIsRecording(true);
       } catch (err) {
         console.error("Mic access error:", err);
-        alert("Could not access microphone");
+        enqueueSnackbar("Could not access microphone", { variant: "error" });
       }
     } else {
       mediaRecorder?.stop();
@@ -438,6 +439,17 @@ export default function ChatDashboard() {
     if (!url) return false;
     const videoExtensions = [".mp4", ".mov", ".avi", ".mkv", ".webm"];
     return videoExtensions.some((ext) => url.toLowerCase().endsWith(ext));
+  };
+
+  const handleDeleteMessage = async (id: string) => {
+    try {
+      await fetch(`/api/messages/${id}`, { method: "DELETE" });
+      setMessages((prev: any) => prev.filter((m: any) => m._id !== id));
+      alert("Message deleted successfully.");
+    } catch (error) {
+      console.error("Error deleting message:", error);
+      alert("Failed to delete message.");
+    }
   };
 
   return (
@@ -576,7 +588,7 @@ export default function ChatDashboard() {
           {/* Messages */}
           <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4">
             {filteredMessages?.map((message: any) => (
-              <div key={message?.id} className={`flex ${message?.sent || message?.sender?._id === loggedInUser?.id ? "justify-end" : "justify-start"}`}>
+              <div key={message?.id} className={`relative flex ${message?.sent || message?.sender?._id === loggedInUser?.id ? "justify-end" : "justify-start"}`}>
                 {message?.type === "missedCall" ? (
                   <div className="flex items-center justify-center w-full">
                     <div className="bg-white text-red-500 shadow-sm p-3 rounded-xl flex items-center space-x-3 mx-auto">
@@ -588,6 +600,29 @@ export default function ChatDashboard() {
                   </div>
                 ) : (
                   <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${message?.sent || message?.sender?._id === loggedInUser?.id ? "bg-secondary text-white" : "bg-white text-gray-900 shadow-sm"}`}>
+                    <div className="flex">
+                      {message?.sender?._id === loggedInUser?.id && (
+                        <div className="ms-auto">
+                          <button onClick={() => setShowMenu((prev) => (prev === message._id ? null : message._id))} className="text-white/80 hover:text-white cursor-pointer">
+                            &#x22EE;
+                          </button>
+
+                          {showMenu === message._id && (
+                            <div className="absolute right-0 mt-1 w-auto bg-white border rounded shadow-md z-50">
+                              <button
+                                onClick={() => {
+                                  const confirmed = confirm("⚠️ This message will be permanently deleted. Continue?");
+                                  if (confirmed) handleDeleteMessage(message._id);
+                                  setShowMenu(false);
+                                }}
+                                className="block w-full text-left text-sm text-red-600 hover:bg-gray-100 px-3 py-2 cursor-pointer">
+                                Delete message
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                     {message?.type === "image" && message?.url && (
                       <Link href={message?.url || "/messages"} target="_blank" className="flex items-center space-x-2">
                         <img src={message?.url} alt="Shared image" className="w-full h-48 object-cover rounded mb-2" />
@@ -598,25 +633,17 @@ export default function ChatDashboard() {
                         <audio controls src={message?.url} className="w-[100] h-10" />
                       </div>
                     )}
-                    {message?.type === "file" && (
-                      <Link href={message?.url || "/messages"} target="_blank" className="flex items-center space-x-2">
-                        <FileText className="w-5 h-5" />
-                        <span className="text-sm text-wrap">{message?.text || "File"}</span>
-                      </Link>
-                    )}
                     {message?.type === "image" && message?.url && (
                       <Link href={message?.url || "/messages"} target="_blank" className="flex items-center space-x-2">
                         <img src={message?.url} alt="Shared image" className="w-full h-48 object-cover rounded mb-2" />
                       </Link>
                     )}
-
                     {message?.type === "file" && (
                       <Link href={message?.url || "/messages"} target="_blank" className="flex items-center space-x-2">
                         <FileText className="w-5 h-5" />
                         <span className="text-sm text-wrap">{message?.text || "File"}</span>
                       </Link>
                     )}
-
                     {message?.type === "video" && message?.url && (
                       <Link href={message?.url || "/messages"} target="_blank" className="relative block w-full h-48">
                         {/* Thumbnail preview (poster frame or placeholder) */}
@@ -653,7 +680,6 @@ export default function ChatDashboard() {
                         <span className="text-sm">{message?.text}</span>
                       </div>
                     )}
-
                     {/* Video call message */}
                     {message?.type === "videoCall" && (
                       <div

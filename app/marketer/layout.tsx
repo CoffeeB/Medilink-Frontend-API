@@ -6,6 +6,7 @@ import SocketContextProvider from "@/context/SocketContextProvider";
 import Footer from "@/components/Footer";
 import Cookies from "js-cookie";
 import { PeerProvider } from "@/context/CallProvider";
+import { SnackbarProvider } from "notistack";
 
 const MarketerLayout = ({ children }: { children: React.ReactNode }) => {
   const [loggedInUser, setLoggedInUser] = useState<any>(null);
@@ -34,15 +35,17 @@ const MarketerLayout = ({ children }: { children: React.ReactNode }) => {
 
   return (
     <SocketContextProvider>
-      <PeerProvider loggedInUser={loggedInUser}>
-        <>
-          <div className="min-h-screen bg-gray-50">
-            <MarketerHeader />
-            <main className="container max-w-[1350px] mx-auto p-6 space-y-6">{children}</main>
-          </div>
-          <Footer />
-        </>
-      </PeerProvider>
+      <SnackbarProvider maxSnack={3} anchorOrigin={{ vertical: "top", horizontal: "right" }} autoHideDuration={4000}>
+        <PeerProvider loggedInUser={loggedInUser}>
+          <>
+            <div className="min-h-screen bg-gray-50">
+              <MarketerHeader />
+              <main className="container max-w-[1350px] mx-auto p-6 space-y-6">{children}</main>
+            </div>
+            <Footer />
+          </>
+        </PeerProvider>
+      </SnackbarProvider>
     </SocketContextProvider>
   );
 };

@@ -13,6 +13,7 @@ import Image from "next/image";
 import { format } from "date-fns";
 import { getProfile, updatePassword, updateProfile } from "@/hooks/profile"; // 🔑 add update function in backend
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { formatInTimeZone } from "date-fns-tz";
 
 export default function DoctorProfile() {
   const [profile, setProfile] = useState<any>(null);
@@ -118,6 +119,8 @@ export default function DoctorProfile() {
       setPasswordError(error.response?.data?.message || "Failed to reset password");
     }
   };
+
+  const formattedDOB = profile?.dateofBirth ? formatInTimeZone(new Date(profile.dateofBirth), "UTC", "do MMM yyyy") : "";
 
   return (
     <div className="container max-w-[1350px] mx-auto p-3 sm:p-4 md:p-6 space-y-4 sm:space-y-6">
@@ -255,7 +258,7 @@ export default function DoctorProfile() {
                 </div>
                 <div>
                   <p className="text-xs sm:text-sm text-muted-foreground">DOB:</p>
-                  {isEditing ? <Input type="date" value={editableProfile?.dateofBirth || ""} onChange={(e) => setEditableProfile({ ...editableProfile, dateofBirth: e.target.value })} /> : <p className="font-medium text-sm sm:text-base">{profile?.dateofBirth ? format(new Date(profile.dateofBirth), "do MMM yyyy") : ""}</p>}
+                  {isEditing ? <Input type="date" value={editableProfile?.dateofBirth || ""} onChange={(e) => setEditableProfile({ ...editableProfile, dateofBirth: e.target.value })} /> : <p className="font-medium text-sm sm:text-base">{formattedDOB}</p>}
                 </div>
               </div>
 

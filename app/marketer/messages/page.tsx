@@ -67,7 +67,8 @@ export default function ChatDashboard() {
   const [showSidebar, setShowSidebar] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const { selectedContact, setSelectedContact, sending, setSending, loggedInUser, messages, setMessages, conversationId, setConversationId, recipientPeerId, setRecipientPeerId, startAudioCall, startVideoCall } = usePeerContext();
-
+  const [messageToDelete, setMessageToDelete] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
   // Refs
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
@@ -445,11 +446,20 @@ export default function ChatDashboard() {
     try {
       await fetch(`/api/messages/${id}`, { method: "DELETE" });
       setMessages((prev: any) => prev.filter((m: any) => m._id !== id));
-      alert("Message deleted successfully.");
     } catch (error) {
       console.error("Error deleting message:", error);
-      alert("Failed to delete message.");
     }
+  };
+
+  const openDeleteModal = (id: string) => {
+    setMessageToDelete(id);
+    setShowDeleteModal(true);
+    setShowMenu(false);
+  };
+
+  const confirmDelete = () => {
+    if (messageToDelete) handleDeleteMessage(messageToDelete);
+    setShowDeleteModal(false);
   };
 
   return (
@@ -589,28 +599,6 @@ export default function ChatDashboard() {
           <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4">
             {filteredMessages?.map((message: any) => (
               <div key={message?.id} className={`relative flex ${message?.sent || message?.sender?._id === loggedInUser?.id ? "justify-end" : "justify-start"}`}>
-                {message?.sender?._id === loggedInUser?.id && (
-                  <div className="absolute top-1 right-2">
-                    <button onClick={() => setShowMenu((prev) => (prev === message._id ? null : message._id))} className="text-white/80 hover:text-white">
-                      &#x22EE;
-                    </button>
-
-                    {showMenu === message._id && (
-                      <div className="absolute right-0 mt-1 w-32 bg-white border rounded shadow-md z-50">
-                        <button
-                          onClick={() => {
-                            const confirmed = confirm("⚠️ This message will be permanently deleted. Continue?");
-                            if (confirmed) handleDeleteMessage(message._id);
-                            setShowMenu(false);
-                          }}
-                          className="block w-full text-left text-sm text-red-600 hover:bg-gray-100 px-3 py-2">
-                          <Trash />
-                          Delete
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                )}
                 {message?.type === "missedCall" ? (
                   <div className="flex items-center justify-center w-full">
                     <div className="bg-white text-red-500 shadow-sm p-3 rounded-xl flex items-center space-x-3 mx-auto">
@@ -621,7 +609,25 @@ export default function ChatDashboard() {
                     </div>
                   </div>
                 ) : (
-                  <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${message?.sent || message?.sender?._id === loggedInUser?.id ? "bg-secondary text-white" : "bg-white text-gray-900 shadow-sm"}`}>
+                  <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${message?.sent || message?.sender?._id === loggedInUser?.id ? "bg-secondary text-white" : "bg-white text-gray-900 shadow-sm"} grid`}>
+                    <div className="flex">
+                      {message?.sender?._id === loggedInUser?.id && (
+                        <div className="ms-auto">
+                          <button onClick={() => setShowMenu((prev) => (prev === message._id ? null : message._id))} className="text-white/80 hover:text-white cursor-pointer">
+                            &#x22EE;
+                          </button>
+
+                          {showMenu === message._id && (
+                            <div className="absolute right-0 mt-1 w-auto bg-white border rounded shadow-md z-50">
+                              <button onClick={() => openDeleteModal(message._id)} className="block w-full text-left text-sm text-red-600 hover:bg-gray-100 px-3 py-2 flex gap-2 items-center cursor-pointer">
+                                <Trash size={20} />
+                                Delete
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
+                    </div>
                     {message?.type === "image" && message?.url && (
                       <Link href={message?.url || "/messages"} target="_blank" className="flex items-center space-x-2">
                         <img src={message?.url} alt="Shared image" className="w-full h-48 object-cover rounded mb-2" />
@@ -692,7 +698,7 @@ export default function ChatDashboard() {
                     )}
                     {message.type === "text" && <p className="text-sm text-wrap wrap-anywhere">{message?.text}</p>}
                     <div className={`flex items-center justify-end mt-1 space-x-1 ${message?.sent || message?.sender?._id === loggedInUser?.id ? "text-blue-100" : "text-gray-500"}`}>
-                      <span className="text-xs">{message?.timestamp}</span>
+                      <span className="text-xs">{message?.createdAt ? format(new Date(message.createdAt), "h:mm a") : ""}</span>
                       {message?.sent || (message?.sender?._id === loggedInUser?.id && <div className="flex">{message?.read ? <CheckCheck className="w-3 h-3 text-blue-300" /> : message?.delivered ? <CheckCheck className="w-3 h-3" /> : <Check className="w-3 h-3" />}</div>)}
                     </div>
                   </div>
@@ -818,6 +824,23 @@ export default function ChatDashboard() {
       {/* Hidden file inputs */}
       <input ref={fileInputRef} type="file" accept="*/*" multiple onChange={handleFileSelect} className="hidden" />
       <input ref={cameraInputRef} type="file" accept="image/*,video/*" capture="environment" onChange={handleCameraCapture} className="hidden" />
+
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-[1000] bg-black/50 flex items-center justify-center">
+          <div className="bg-white p-6 rounded-lg shadow-md max-w-sm w-full">
+            <h2 className="text-lg font-semibold text-gray-800 mb-2">Delete Message</h2>
+            <p className="text-sm text-gray-600 mb-4">This message will be permanently deleted. Do you want to continue?</p>
+            <div className="flex justify-end space-x-3">
+              <button onClick={() => setShowDeleteModal(false)} className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm cursor-pointer">
+                Cancel
+              </button>
+              <button onClick={confirmDelete} className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white text-sm cursor-pointer">
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

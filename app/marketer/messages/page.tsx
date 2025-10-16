@@ -1,6 +1,6 @@
 "use client";
 
-import { activeMessages, contactMessage, contactMessageHistory, fetchPeerId, messageContacts, sendMessage, storePeerId } from "@/hooks/messages";
+import { activeMessages, contactMessage, contactMessageHistory, fetchPeerId, messageContacts, sendMessage, storePeerId, deleteMessage } from "@/hooks/messages";
 import React, { useState, useRef, useEffect } from "react";
 import { Search, Phone, Video, Smile, Paperclip, Send, Check, CheckCheck, PhoneMissed, ListFilter, Camera, Mic, MessageSquareDot, Pen, Users, FileText, ImagePlay, Plus, PhoneOff, VideoOff, MicOff, X, ArrowLeft, SquarePen, PhoneOffIcon, Trash } from "lucide-react";
 import ContactModal from "@/components/ContactModal";
@@ -444,7 +444,7 @@ export default function ChatDashboard() {
 
   const handleDeleteMessage = async (id: string) => {
     try {
-      await fetch(`/api/messages/${id}`, { method: "DELETE" });
+      await deleteMessage(id);
       setMessages((prev: any) => prev.filter((m: any) => m._id !== id));
     } catch (error) {
       console.error("Error deleting message:", error);

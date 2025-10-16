@@ -144,7 +144,7 @@ export default function DoctorClientsList() {
     }
   };
 
-  const canEdit = selected && (selected?.status === "pending" || selected?.status === "submitted");
+  const canEdit = true;
 
   function handleAddAppointment() {
     setFormMode("create");

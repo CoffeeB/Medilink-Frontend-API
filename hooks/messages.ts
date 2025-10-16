@@ -125,3 +125,21 @@ export const sendMessage = async (conversationId: string, text: string, type: st
 
   return response.data;
 };
+
+export const deleteMessage = async (id: any) => {
+  const token = Cookies.get("token");
+  if (!token) {
+    throw new Error("Token is required");
+  }
+
+  const response = await axiosInstance.delete(
+    `/api/messages/${id}`,
+    {
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+    }
+  );
+
+  return response.data;
+};

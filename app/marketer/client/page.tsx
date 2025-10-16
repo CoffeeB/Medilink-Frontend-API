@@ -144,7 +144,7 @@ export default function MarketerClientsList() {
     }
   };
 
-  const canEdit = selected && (selected?.status === "pending" || selected?.status === "review");
+  const canEdit = true;
 
   function handleAddAppointment() {
     setFormMode("create");

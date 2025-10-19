@@ -31,8 +31,6 @@ export default function MarketerProfile() {
   }>({});
   const [passwordError, setPasswordError] = useState("");
 
-  const [isDragging, setIsDragging] = useState<string | null>(null);
-
   useEffect(() => {
     const fetchProfileData = async () => {
       try {
@@ -47,19 +45,6 @@ export default function MarketerProfile() {
     };
     fetchProfileData();
   }, []);
-
-  const handleFileUpload = (field: keyof typeof uploadedFiles, file: File) => {
-    setUploadedFiles((prev) => ({ ...prev, [field]: file }));
-  };
-
-  const handleRemoveFile = (field: keyof typeof uploadedFiles) => {
-    setUploadedFiles((prev) => ({ ...prev, [field]: undefined }));
-  };
-
-  const handleClientPinChange = (oldPin: string, newPin: string) => {
-    console.log("Changing client PIN:", { oldPin, newPin });
-    // Add API call to change PIN here
-  };
 
   const handleSave = async () => {
     try {

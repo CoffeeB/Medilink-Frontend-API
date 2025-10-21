@@ -132,14 +132,26 @@ export const deleteMessage = async (id: any) => {
     throw new Error("Token is required");
   }
 
-  const response = await axiosInstance.delete(
-    `/api/messages/${id}`,
-    {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    }
-  );
+  const response = await axiosInstance.delete(`/api/messages/${id}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+
+  return response.data;
+};
+
+export const deleteConvo = async (id: any) => {
+  const token = Cookies.get("token");
+  if (!token) {
+    throw new Error("Token is required");
+  }
+
+  const response = await axiosInstance.delete(`/api/conversations/${id}`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
 
   return response.data;
 };

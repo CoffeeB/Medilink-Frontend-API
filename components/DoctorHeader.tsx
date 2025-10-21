@@ -142,7 +142,7 @@ const DoctorHeader = () => {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full bg-transparent border border-black/70 cursor-pointer overflow-hidden">
-                  <Image src={loggedInUser?.avatar || "/images/Blank_Profile.jpg"} alt="Excel Connect logo" fill className="object-cover rounded-full" priority />
+                  <Image src={loggedInUser?.avatarUrl || "/images/Blank_Profile.jpg"} alt="Excel Connect logo" fill className="object-cover rounded-full" priority />
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-56 bg-white" align="end" forceMount>

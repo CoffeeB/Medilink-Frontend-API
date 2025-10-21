@@ -1,6 +1,6 @@
 "use client";
 
-import { activeMessages, contactMessage, contactMessageHistory, fetchPeerId, messageContacts, sendMessage, storePeerId, deleteMessage } from "@/hooks/messages";
+import { activeMessages, contactMessage, contactMessageHistory, fetchPeerId, messageContacts, sendMessage, storePeerId, deleteMessage, deleteConvo } from "@/hooks/messages";
 import React, { useState, useRef, useEffect } from "react";
 import { Search, Phone, Video, Smile, Paperclip, Send, Check, CheckCheck, PhoneMissed, ListFilter, Camera, Mic, MessageSquareDot, Pen, Users, FileText, ImagePlay, Plus, PhoneOff, VideoOff, MicOff, X, ArrowLeft, SquarePen, PhoneOffIcon, Trash } from "lucide-react";
 import ContactModal from "@/components/ContactModal";
@@ -52,7 +52,7 @@ export default function ChatDashboard() {
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const [showAttachmentOptions, setShowAttachmentOptions] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
-  const [contacts, setContacts] = useState<any>(null);
+  const [conversations, setConversations] = useState<any>(null);
   const [allContacts, setAllContacts] = useState<Contact[]>([]);
   const [messageInput, setMessageInput] = useState("");
   const [searchQuery, setSearchQuery] = useState("");
@@ -73,7 +73,22 @@ export default function ChatDashboard() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const cameraInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [showConvoMenu, setShowConvoMenu] = useState<string | null>(null);
+  const [confirmDeleteConvo, setConfirmDeleteConvo] = useState<{ open: boolean; conversationId: string | null }>({
+    open: false,
+    conversationId: null,
+  });
 
+  const confirmDeleteConversation = async () => {
+    try {
+      if (confirmDeleteConvo.conversationId) {
+        await deleteConvo(confirmDeleteConvo.conversationId);
+        setConfirmDeleteConvo({ open: false, conversationId: null });
+      }
+    } catch (error) {
+      console.log(error);
+    }
+  };
   // Responsive handling
   useEffect(() => {
     const checkMobile = () => {
@@ -90,20 +105,20 @@ export default function ChatDashboard() {
 
   // fetch contacts
   useEffect(() => {
-    const fetchContacts = async () => {
+    const fetchConversations = async () => {
       try {
         const response = await activeMessages();
-        setContacts(response);
+        setConversations(response);
       } catch (error: any) {
         console.error(error);
       }
     };
 
     // Call immediately on mount
-    fetchContacts();
+    fetchConversations();
 
     // Poll every 5 seconds
-    const interval = setInterval(fetchContacts, 5000);
+    const interval = setInterval(fetchConversations, 5000);
 
     // Cleanup on unmount
     return () => clearInterval(interval);
@@ -137,7 +152,7 @@ export default function ChatDashboard() {
     setSelectedContact(contact);
 
     // Add to contacts if it doesn’t exist already
-    setContacts((prev: any) => {
+    setConversations((prev: any) => {
       const exists = prev.some((c: any) => (c?.id && c?.id === contact.id) || (c?._id && c?._id === contact._id));
 
       if (exists) {
@@ -186,7 +201,7 @@ export default function ChatDashboard() {
     socket.on("user:online", ({ userId }) => {
       console.log("📡 user:online event received for:", userId);
 
-      setContacts((prev: any) =>
+      setConversations((prev: any) =>
         prev?.map((conv: any) => ({
           ...conv,
           participants: conv.participants.map((p: any) => (String(p._id) === String(userId) ? { ...p, isOnline: true } : p)),
@@ -197,7 +212,7 @@ export default function ChatDashboard() {
     socket.on("user:offline", ({ userId, lastSeen }) => {
       console.log("📡 user:offline event received for:", userId, "last seen:", lastSeen);
 
-      setContacts((prev: any) =>
+      setConversations((prev: any) =>
         prev?.map((conv: any) => ({
           ...conv,
           participants: conv.participants.map((p: any) => (String(p._id) === String(userId) ? { ...p, isOnline: false, lastSeen } : p)),
@@ -214,13 +229,13 @@ export default function ChatDashboard() {
     };
   }, [loggedInUser, socket]);
 
-  const transformedContacts = contacts?.map((contact: any) => {
+  const transformedContacts = conversations?.map((contact: any) => {
     const otherParticipant = contact?.participants?.find((p: any) => {
       return p._id !== loggedInUser?.id;
     });
 
     return {
-      _id: contact?._id,
+      conversationId: contact?._id,
       lastMessage: contact?.lastMessage,
       timestamp: contact?.updatedAt,
       unread: contact?.unread || 0,
@@ -509,11 +524,14 @@ export default function ChatDashboard() {
                 if (isMobile) setShowSidebar(false);
               }}
               className={`p-4 border-b border-gray-100 cursor-pointer hover:bg-gray-50 transition-colors ${selectedContact?._id === contact?._id ? "bg-gray-100" : ""}`}>
-              <div className="flex items-center space-x-3">
+              <div className="flex items-center space-x-3 relative">
+                {/* Avatar */}
                 <div className="relative">
-                  <img src={contact?.avatar || "/placeholder.svg"} alt={contact?.firstname} className="w-12 h-12 rounded-full object-cover bg-gray-200" />
-                  {contact?.isOnline ? <div className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 rounded-full border-2 border-white"></div> : <div className="absolute bottom-0 right-0 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></div>}
+                  <img src={contact?.avatarUrl || "/placeholder.svg"} alt={contact?.firstname} className="w-12 h-12 rounded-full object-cover bg-gray-200" />
+                  <div className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-white ${contact?.isOnline ? "bg-green-500" : "bg-red-500"}`}></div>
                 </div>
+
+                {/* Contact Info */}
                 <div className="flex-1 min-w-0">
                   <div className="flex justify-between items-start">
                     <h3 className="text-sm font-medium text-gray-900 truncate">
@@ -521,13 +539,42 @@ export default function ChatDashboard() {
                     </h3>
                     <span className="text-xs text-gray-500 ml-2 whitespace-nowrap">{format(new Date(contact?.timestamp), "eee p")}</span>
                   </div>
+
                   <div className="flex justify-between items-center mt-1">
                     <p className="text-sm text-gray-500 truncate">{contact?.lastMessage}</p>
                     {contact?.unread > 0 && <span className="ml-2 bg-secondary text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center whitespace-nowrap">{contact?.unread > 99 ? "99+" : contact?.unread}</span>}
                   </div>
+
                   <div className="flex justify-between items-center mt-1">
                     <p className={`text-xs text-black truncate capitalize ${contact?.role === "doctor" ? "bg-blue-300" : contact?.role === "marketer" ? "bg-green-300" : ""} rounded p-1`}>{contact?.role}</p>
                   </div>
+                </div>
+
+                {/* Ellipsis Button */}
+                <div className="ml-2 relative">
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowConvoMenu(showConvoMenu === contact._id ? null : contact._id);
+                    }}
+                    className="text-gray-500 hover:text-black px-2">
+                    &#x22EE;
+                  </button>
+
+                  {showConvoMenu === contact._id && (
+                    <div className="absolute right-0 mt-1 bg-white border rounded shadow-md z-50">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setShowConvoMenu(null);
+                          setConfirmDeleteConvo({ open: true, conversationId: contact.conversationId });
+                        }}
+                        className="block w-full text-left text-sm text-red-600 hover:bg-gray-100 px-3 py-2 flex items-center gap-2 cursor-pointer">
+                        <Trash size={20} />
+                        Delete
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -619,7 +666,7 @@ export default function ChatDashboard() {
 
                           {showMenu === message._id && (
                             <div className="absolute right-0 mt-1 w-auto bg-white border rounded shadow-md z-50">
-                              <button onClick={() => openDeleteModal(message._id)} className="block w-full text-left text-sm text-red-600 hover:bg-gray-100 px-3 py-2 flex gap-2 items-center cursor-pointer">
+                              <button onClick={() => openDeleteModal(message._id)} className="block w-full text-left text-sm text-red-600 hover:bg-gray-100 px-3 py-2 flex items-center gap-2 cursor-pointer">
                                 <Trash size={20} />
                                 Delete
                               </button>
@@ -698,7 +745,7 @@ export default function ChatDashboard() {
                     )}
                     {message.type === "text" && <p className="text-sm text-wrap wrap-anywhere">{message?.text}</p>}
                     <div className={`flex items-center justify-end mt-1 space-x-1 ${message?.sent || message?.sender?._id === loggedInUser?.id ? "text-blue-100" : "text-gray-500"}`}>
-                      <span className="text-xs">{message?.createdAt ? format(new Date(message.createdAt), "h:mm a") : ""}</span>
+                      <span className="text-xs">{message?.timestamp}</span>
                       {message?.sent || (message?.sender?._id === loggedInUser?.id && <div className="flex">{message?.read ? <CheckCheck className="w-3 h-3 text-blue-300" /> : message?.delivered ? <CheckCheck className="w-3 h-3" /> : <Check className="w-3 h-3" />}</div>)}
                     </div>
                   </div>
@@ -831,10 +878,27 @@ export default function ChatDashboard() {
             <h2 className="text-lg font-semibold text-gray-800 mb-2">Delete Message</h2>
             <p className="text-sm text-gray-600 mb-4">This message will be permanently deleted. Do you want to continue?</p>
             <div className="flex justify-end space-x-3">
-              <button onClick={() => setShowDeleteModal(false)} className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm cursor-pointer">
+              <button onClick={() => setShowDeleteModal(false)} className="px-4 py-2 rounded bg-gray-200 hover:bg-gray-300 text-gray-800 text-sm">
                 Cancel
               </button>
-              <button onClick={confirmDelete} className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white text-sm cursor-pointer">
+              <button onClick={confirmDelete} className="px-4 py-2 rounded bg-red-600 hover:bg-red-700 text-white text-sm">
+                Delete
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {confirmDeleteConvo.open && (
+        <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-lg p-6 w-80">
+            <h2 className="text-lg font-semibold text-gray-800 mb-3">Delete Contact?</h2>
+            <p className="text-sm text-gray-600 mb-5">This contact and chat history will be permanently deleted.</p>
+            <div className="flex justify-end space-x-3">
+              <button onClick={() => setConfirmDeleteConvo({ open: false, conversationId: null })} className="px-4 py-2 text-sm rounded bg-gray-200 hover:bg-gray-300">
+                Cancel
+              </button>
+              <button onClick={confirmDeleteConversation} className="px-4 py-2 text-sm rounded bg-red-600 text-white hover:bg-red-700">
                 Delete
               </button>
             </div>

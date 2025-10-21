@@ -63,7 +63,7 @@ export default function DoctorProfile() {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      formData.append("userId", profile.id); // pass user id to API
+      formData.append("userId", profile?._id || ""); // pass user id to API
 
       const res = await fetch("/api/upload/avatar", {
         method: "POST",

@@ -14,6 +14,7 @@ import { format } from "date-fns";
 import { getProfile, updatePassword, updateProfile } from "@/hooks/profile"; // 🔑 add update function in backend
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { formatInTimeZone } from "date-fns-tz";
+import Cookies from "js-cookie";
 
 export default function MarketerProfile() {
   const [profile, setProfile] = useState<any>(null);
@@ -49,8 +50,27 @@ export default function MarketerProfile() {
   const handleSave = async () => {
     try {
       const updated = await updateProfile(editableProfile);
-      setProfile(updated?.user);
-      setIsEditing(false);
+
+      if (updated?.user) {
+        setProfile(updated.user);
+        setIsEditing(false);
+
+        // ✅ Update "user" cookie with new avatarUrl
+        const existingUser = Cookies.get("user");
+        if (existingUser) {
+          try {
+            const parsedUser = JSON.parse(existingUser);
+            const updatedUser = {
+              ...parsedUser,
+              avatarUrl: updated.user.avatarUrl, // ✅ update avatar only
+            };
+
+            Cookies.set("user", JSON.stringify(updatedUser), { expires: 7 }); // optional: keep for 7 days
+          } catch (err) {
+            console.error("Failed to parse user cookie", err);
+          }
+        }
+      }
     } catch (err) {
       console.error("Failed to update profile", err);
     }
